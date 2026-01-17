@@ -50,6 +50,13 @@ onAuthStateChanged(auth, (user) => {
         if(addUserBtn) addUserBtn.style.display = isAdmin ? 'flex' : 'none';
         if(settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none';
 
+        // ✅ แสดงชื่อผู้ใช้ (ตัด @ward.local ออก)
+        const usernameDisplay = document.getElementById('user-info');
+        if (usernameDisplay) {
+            const cleanUsername = user.email.replace(EMAIL_DOMAIN, '');
+            usernameDisplay.innerHTML = `<i class="fas fa-user-circle"></i> Log in as: ${cleanUsername}`;
+        }
+
         authScreen.style.display = 'none';
         appContainer.style.display = 'block';
         initApp(); 

@@ -20,7 +20,8 @@
             
             <form id="login-form">
                 <div class="form-group">
-                    <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username)" required>
+                    <!-- ปรับ Placeholder ให้ชัดเจน -->
+                    <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username ไม่ต้องมี @)" required>
                 </div>
                 <div class="form-group">
                     <input type="password" id="login-password" class="login-input" placeholder="รหัสผ่าน (Password)" required>
@@ -41,7 +42,10 @@
                     <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <!-- ✅ แสดงชื่อผู้ใช้ตรงนี้ -->
+                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
+
                     <!-- ปุ่มตั้งค่า (Admin Only) -->
                     <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-cog"></i> ตั้งค่า (Settings)
