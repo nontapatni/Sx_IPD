@@ -56,21 +56,20 @@
                 </div>
 
                 <!-- Active Cases -->
-                <div class="section-header"><i class="fas fa-procedures"></i> Active Cases</div>
+                <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
                 <div class="card">
                     <table id="active-table">
                         <thead>
                             <tr>
-                                <!-- ปรับความกว้างให้กระชับ -->
-                                <th style="width: 70px;">Ward</th>
-                                <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 80px;">Ward</th>
+                                <th style="width: 60px;">Bed</th>
+                                <th>Date</th>
+                                <th>HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <th>Owner</th>
                                 <th>Note</th>
-                                <th style="width: 90px;">Action</th> <!-- ขยายช่อง Action -->
+                                <th style="width: 120px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="patient-list">
@@ -80,18 +79,18 @@
                 </div>
 
                 <!-- Discharged Cases -->
-                <div class="section-header"><i class="fas fa-history"></i> Discharged History</div>
+                <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
                 <div class="card">
                     <table id="discharged-table">
                         <thead>
                             <tr>
-                                <th style="width: 70px;">Ward</th>
-                                <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 80px;">Ward</th>
+                                <th style="width: 60px;">Bed</th>
+                                <th>Date</th>
+                                <th>HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <th>Owner</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
@@ -108,7 +107,7 @@
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">
                         <button id="add-duty-btn" class="btn btn-primary">
-                            <i class="fas fa-calendar-plus"></i> ลงตารางเวร
+                            <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
                         </button>
                         
                         <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
@@ -122,10 +121,10 @@
                     <table id="schedule-table">
                         <thead>
                             <tr>
-                                <th style="width: 130px;">Date</th>
-                                <th>Ward (เวรวอร์ด)</th>
-                                <th>ER (เวรห้องฉุกเฉิน)</th>
-                                <th style="width: 80px;">Action</th> <!-- ขยายช่อง Action เพื่อให้ปุ่มเรียงกัน -->
+                                <th style="width: 150px;">Date / Day</th>
+                                <th>Ward (เวรวอร์ด)</th> <!-- เปลี่ยนหัวตาราง -->
+                                <th>ER (เวรห้องฉุกเฉิน)</th> <!-- เปลี่ยนหัวตาราง -->
+                                <th style="width: 60px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="duty-list">
@@ -142,7 +141,7 @@
     <div id="modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('modal')">&times;</span>
-            <h2 id="modal-title">รับเคสใหม่</h2>
+            <h2 id="modal-title">รับเคสใหม่ (New Admission)</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
                 
@@ -231,11 +230,11 @@
         </div>
     </div>
 
-    <!-- Modal 2: Add Duty -->
+    <!-- Modal 2: Add Duty (ปรับฟอร์มใหม่) -->
     <div id="duty-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('duty-modal')">&times;</span>
-            <h2>ลงตารางเวร</h2>
+            <h2>ลงตารางเวร (Add Duty)</h2>
             <form id="duty-form">
                 <div class="form-group">
                     <label>วันที่ (Date)</label>

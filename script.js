@@ -202,7 +202,7 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
-        // ใช้ Wrapper .action-buttons เพื่อให้ CSS จัดการการเรียงตัว
+        // เพิ่มปุ่ม Edit (สีส้ม) ข้างๆ ปุ่ม Delete
         row.innerHTML = `
             <td>
                 <strong>${dateStr}</strong> 
@@ -211,10 +211,8 @@ function renderSchedule(duties) {
             <td>${duty.ward || '-'}</td>
             <td>${duty.er || '-'}</td>
             <td>
-                <div class="action-buttons">
-                    <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')"><i class="fas fa-edit"></i></button>
-                    <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')"><i class="fas fa-trash"></i></button>
-                </div>
+                <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')" style="display:inline-block; margin-right:5px;"><i class="fas fa-edit"></i></button>
+                <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')" style="display:inline-block;"><i class="fas fa-trash"></i></button>
             </td>
         `;
         dutyList.appendChild(row);
