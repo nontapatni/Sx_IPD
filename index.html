@@ -16,16 +16,16 @@
         <div class="login-card">
             <div class="login-logo"><i class="fas fa-hospital-user"></i></div>
             <h2 id="auth-title">เข้าสู่ระบบ (Login)</h2>
-            <p id="auth-subtitle">ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม</p>
+            <p id="auth-subtitle">Sx Ongk RoD</p>
             
             <form id="login-form">
                 <div class="form-group">
-                    <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username ไม่ต้องมี @)" required>
+                    <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username)" required>
                 </div>
                 <div class="form-group">
                     <input type="password" id="login-password" class="login-input" placeholder="รหัสผ่าน (Password)" required>
                 </div>
-                <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
+                <button type="submit" class="btn-login">Login</button>
             </form>
 
             <div id="auth-error" class="login-error"></div>
@@ -38,22 +38,22 @@
             <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+                    <p></p>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
 
                     <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-cog"></i> ตั้งค่า (Settings)
+                        <i class="fas fa-cog"></i> Settings
                     </button>
 
                     <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้
+                        <i class="fas fa-user-plus"></i> Add user
                     </button>
 
                     <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
+                        <i class="fas fa-key"></i> Change password
                     </button>
                     <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -64,14 +64,14 @@
             <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
-                    <i class="fas fa-procedures"></i> รวมทุกเคส (All Patients)
+                    <i class="fas fa-procedures"></i> All Patients
                 </button>
                 <!-- เพิ่ม ID ให้ปุ่มนี้เพื่อซ่อน/แสดง -->
                 <button id="tab-mypatients" class="tab-btn" onclick="window.switchTab('mypatients')">
-                    <i class="fas fa-user-md"></i> คนไข้ของฉัน (My Patients)
+                    <i class="fas fa-user-md"></i> My Patients
                 </button>
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
-                    <i class="fas fa-calendar-alt"></i> ตารางเวร (Duty Schedule)
+                    <i class="fas fa-calendar-alt"></i> ตารางเวร
                 </button>
             </div>
 
@@ -79,7 +79,7 @@
             <div id="patients-view">
                 <div class="controls-bar">
                     <button id="add-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
+                        <i class="fas fa-plus"></i> New case
                     </button>
 
                     <div class="controls-right">
@@ -88,9 +88,9 @@
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
-                                <option value="ward">เรียงตาม Ward</option>
-                                <option value="bed">เรียงตาม Bed</option>
-                                <option value="date">เรียงตาม Date</option>
+                                <option value="ward">Sort by Ward</option>
+                                <option value="bed">Sort by Bed</option>
+                                <option value="date">Sort by Date of Admission</option>
                             </select>
                         </div>
 
@@ -109,8 +109,8 @@
                             <tr>
                                 <th style="width: 70px;">Ward</th>
                                 <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 90px;">Date of Admission</th>
+                                <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
                                 <th style="width: 100px;">Owner</th>
@@ -132,8 +132,8 @@
                             <tr>
                                 <th style="width: 70px;">Ward</th>
                                 <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 90px;">Date of Admission</th>
+                                <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
                                 <th style="width: 100px;">Owner</th>
@@ -142,7 +142,7 @@
                             </tr>
                         </thead>
                         <tbody id="discharged-list">
-                            <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
+                            <tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -159,7 +159,7 @@
             <div id="mypatients-view" style="display: none;">
                 <!-- ส่วนที่ 1: Active -->
                 <div class="section-header" style="color: #2980b9;">
-                    <i class="fas fa-user-md"></i> คนไข้ที่ฉันดูแล (My Active Cases)
+                    <i class="fas fa-user-md"></i> My Active Cases
                 </div>
                 <div class="card">
                     <table id="mypatients-table">
@@ -167,8 +167,8 @@
                             <tr>
                                 <th style="width: 70px;">Ward</th>
                                 <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 90px;">Date of Admission</th>
+                                <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
                                 <th style="width: 100px;">Owner</th>
@@ -177,14 +177,14 @@
                             </tr>
                         </thead>
                         <tbody id="mypatients-list">
-                            <tr><td colspan="9" style="text-align:center;">กำลังโหลด...</td></tr>
+                            <tr><td colspan="9" style="text-align:center;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- ส่วนที่ 2: Discharged (เพิ่มใหม่) -->
                 <div class="section-header" style="color: #7f8c8d; margin-top: 30px;">
-                    <i class="fas fa-history"></i> ประวัติคนไข้ของฉันที่จำหน่ายแล้ว (My Discharged History)
+                    <i class="fas fa-history"></i> My Discharged History
                 </div>
                 <div class="card">
                     <table id="mypatients-discharged-table">
@@ -192,8 +192,8 @@
                             <tr>
                                 <th style="width: 70px;">Ward</th>
                                 <th style="width: 50px;">Bed</th>
-                                <th style="width: 90px;">Date</th>
-                                <th style="width: 100px;">HN / AN</th>
+                                <th style="width: 90px;">Date of Admission</th>
+                                <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
                                 <th style="width: 100px;">Owner</th>
@@ -202,7 +202,7 @@
                             </tr>
                         </thead>
                         <tbody id="mypatients-discharged-list">
-                            <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>
+                            <tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -255,12 +255,12 @@
                     <div class="form-group" style="flex: 1.5;">
                         <label>Ward</label>
                         <select id="ward" required>
-                            <option value="" selected>- เลือก Ward -</option>
+                            <option value="" selected>- Ward -</option>
                         </select>
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Bed No.</label>
-                        <input type="text" id="bed" placeholder="14A">
+                        <input type="text" id="bed" placeholder="99">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
                         <label>Admit Date</label>
@@ -271,11 +271,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>HN</label>
-                        <input type="text" id="hn" placeholder="xxxxxxx">
+                        <input type="text" id="hn" placeholder="69xxxxxx">
                     </div>
                     <div class="form-group">
                         <label>AN</label>
-                        <input type="text" id="an" placeholder="66xxxxxx">
+                        <input type="text" id="an" placeholder="69xxxxxx">
                     </div>
                 </div>
 
@@ -307,7 +307,7 @@
                 <div class="form-group">
                     <label>Owner</label>
                     <select id="owner">
-                        <option value="" selected>-- เลือก Owner --</option>
+                        <option value="" selected>-- Owner --</option>
                     </select>
                 </div>
 
