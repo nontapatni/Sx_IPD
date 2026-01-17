@@ -6,7 +6,6 @@
     <title>Sx IPD Ward Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome สำหรับไอคอนสวยๆ -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -17,20 +16,20 @@
             <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
         </header>
 
-        <!-- แถบควบคุม: ปุ่ม Admit และ ช่อง Search -->
         <div class="controls-bar">
             <button id="add-btn" class="btn btn-primary">
                 <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
             </button>
-            
             <div class="search-box">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" id="searchInput" placeholder="ค้นหา HN, AN หรือ ชื่อ...">
             </div>
         </div>
 
+        <!-- ตารางที่ 1: Active Cases -->
+        <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
         <div class="card">
-            <table id="patient-table">
+            <table id="active-table">
                 <thead>
                     <tr>
                         <th style="width: 60px;">Bed</th>
@@ -40,12 +39,33 @@
                         <th>Diagnosis</th>
                         <th>Owner</th>
                         <th>Note</th>
-                        <th style="width: 100px;">Action</th>
+                        <th style="width: 140px;">Action</th> <!-- ขยายความกว้าง Action -->
                     </tr>
                 </thead>
                 <tbody id="patient-list">
-                    <!-- ข้อมูลจะโหลดจาก Firebase มาแสดงที่นี่ -->
                     <tr><td colspan="8" style="text-align:center;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ตารางที่ 2: Discharged Cases -->
+        <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
+        <div class="card">
+            <table id="discharged-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Bed</th>
+                        <th>Date</th>
+                        <th>HN / AN</th>
+                        <th>Patient Info</th>
+                        <th>Diagnosis</th>
+                        <th>Owner</th>
+                        <th>Note</th>
+                        <th style="width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="discharged-list">
+                    <tr><td colspan="8" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
                 </tbody>
             </table>
         </div>
@@ -57,9 +77,7 @@
             <span class="close-btn">&times;</span>
             <h2 id="modal-title">รับเคสใหม่ (New Admission)</h2>
             <form id="admit-form">
-                <!-- Hidden Input ไว้เก็บ ID ตอนแก้ไข -->
                 <input type="hidden" id="edit-doc-id">
-
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
                         <label>Bed No.</label>
@@ -70,7 +88,6 @@
                         <input type="date" id="admitDate">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>HN</label>
@@ -81,12 +98,10 @@
                         <input type="text" id="an" placeholder="66xxxxxx">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>ชื่อ-สกุล</label>
                     <input type="text" id="name">
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>อายุ</label>
@@ -101,12 +116,10 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Diagnosis</label>
                     <input type="text" id="diag" placeholder="เช่น Acute Appendicitis">
                 </div>
-
                 <div class="form-group">
                     <label>Owner (แพทย์เจ้าของไข้)</label>
                     <select id="owner">
@@ -122,34 +135,24 @@
                         </optgroup>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Note (Short Note)</label>
                     <textarea id="note" rows="2" placeholder="เช่น Plan Set OR, NPO..."></textarea>
                 </div>
-
                 <button type="submit" id="submit-btn" class="btn btn-submit">บันทึกข้อมูล</button>
             </form>
         </div>
     </div>
 
-    <!-- Script แจ้งเตือน Loading -->
+    <!-- Script Check Loading -->
     <script>
         setTimeout(function() {
             const tableBody = document.getElementById('patient-list');
             if (tableBody.innerHTML.includes('Loading data...')) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align:center; color: #c0392b;">
-                            ⚠️ <strong>โหลดข้อมูลไม่สำเร็จ</strong><br>
-                            <small>กรุณาใช้ Live Server หรือตรวจสอบ Console (F12) เพื่อดู Error</small>
-                        </td>
-                    </tr>
-                `;
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: #c0392b;">⚠️ โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ Live Server / Console)</td></tr>`;
             }
         }, 4000);
     </script>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-// เพิ่ม updateDoc เข้ามา
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -20,6 +19,7 @@ const COLLECTION_NAME = "patients";
 
 // Elements
 const patientList = document.getElementById('patient-list');
+const dischargedList = document.getElementById('discharged-list'); // ตารางล่าง
 const addBtn = document.getElementById('add-btn');
 const modal = document.getElementById('modal');
 const closeBtn = document.querySelector('.close-btn');
@@ -28,104 +28,162 @@ const searchInput = document.getElementById('searchInput');
 const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-btn');
 
-// เก็บข้อมูลทั้งหมดไว้ในตัวแปรนี้ เพื่อให้ Search กรองได้โดยไม่ต้องโหลดจาก Server ใหม่
 let allPatientsData = [];
 
-// Default Date
 if(document.getElementById('admitDate')) {
     document.getElementById('admitDate').valueAsDate = new Date();
 }
 
 // ------------------------------------------------------------------
-// 1. Real-time Listener & Data Handling
+// 1. Real-time Listener & Split Tables
 // ------------------------------------------------------------------
 const q = query(collection(db, COLLECTION_NAME), orderBy("bed"));
 
 onSnapshot(q, (querySnapshot) => {
-    allPatientsData = []; // ล้างข้อมูลเก่า
+    allPatientsData = [];
     querySnapshot.forEach((docSnap) => {
-        allPatientsData.push({
-            id: docSnap.id, // เก็บ ID ไว้ใช้อ้างอิงตอน Edit/Delete
-            ...docSnap.data()
-        });
+        allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
     });
-    // เรียกแสดงผลทันที (ส่งข้อมูลทั้งหมดไปแสดง)
+    // แยกการแสดงผล 2 ตาราง
     renderPatients(allPatientsData);
 }, (error) => {
     console.error("Error:", error);
 });
 
-// ฟังก์ชันวาดตาราง (แยกออกมาเพื่อให้ Search เรียกใช้ได้)
 function renderPatients(data) {
     patientList.innerHTML = '';
-    
-    if (data.length === 0) {
-        patientList.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">ไม่พบข้อมูล</td></tr>';
-        return;
+    dischargedList.innerHTML = '';
+
+    // แยกข้อมูล Active vs Discharged
+    const activeCases = data.filter(pt => pt.status !== 'Discharged');
+    const dischargedCases = data.filter(pt => pt.status === 'Discharged');
+
+    // --- Render Active Table ---
+    if (activeCases.length === 0) {
+        patientList.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">ไม่พบผู้ป่วย (No Active Case)</td></tr>';
+    } else {
+        activeCases.forEach(pt => {
+            const row = createRow(pt, true); // true = isActive
+            patientList.appendChild(row);
+        });
     }
 
-    data.forEach((pt) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <strong style="font-size:1.2em;">${pt.bed || '?'}</strong>
-                <div class="status-badge">${pt.status || 'Active'}</div>
-            </td>
-            <td>${pt.date || '-'}</td>
-            <td>
-                <div><strong>HN:</strong> ${pt.hn || '-'}</div>
-                <div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div>
-            </td>
-            <td>
-                <div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div>
-                <div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div>
-            </td>
-            <td>${pt.diag || '-'}</td>
-            <td>${pt.owner || '-'}</td>
-            <td class="text-orange">${pt.note || '-'}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
+    // --- Render Discharged Table ---
+    if (dischargedCases.length === 0) {
+        dischargedList.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>';
+    } else {
+        dischargedCases.forEach(pt => {
+            const row = createRow(pt, false); // false = isDischarged
+            dischargedList.appendChild(row);
+        });
+    }
+}
+
+// Helper สร้าง Row HTML
+function createRow(pt, isActive) {
+    const row = document.createElement('tr');
+    
+    // ปุ่มสำหรับ Active: Edit + D/C + Delete
+    // ปุ่มสำหรับ Discharged: Delete (ลบถาวร)
+    let actionButtons = '';
+    
+    if (isActive) {
+        actionButtons = `
+            <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')" title="แก้ไข">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-sm btn-dc" onclick="window.dischargeCase('${pt.id}')" title="Discharge">
+                <i class="fas fa-check-circle"></i> D/C
+            </button>
+            <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')" title="ลบถาวร">
+                <i class="fas fa-trash"></i>
+            </button>
         `;
-        patientList.appendChild(row);
-    });
+    } else {
+        actionButtons = `
+            <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')" title="ลบประวัติถาวร">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+    }
+
+    const badgeClass = isActive ? 'status-badge' : 'status-badge discharged';
+    
+    row.innerHTML = `
+        <td>
+            <strong style="font-size:1.2em;">${pt.bed || '?'}</strong>
+            <div class="${badgeClass}">${pt.status || 'Active'}</div>
+        </td>
+        <td>${pt.date || '-'}</td>
+        <td>
+            <div><strong>HN:</strong> ${pt.hn || '-'}</div>
+            <div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div>
+        </td>
+        <td>
+            <div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div>
+            <div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div>
+        </td>
+        <td>${pt.diag || '-'}</td>
+        <td>${pt.owner || '-'}</td>
+        <td class="text-orange">${pt.note || '-'}</td>
+        <td>
+            <div class="action-buttons">
+                ${actionButtons}
+            </div>
+        </td>
+    `;
+    return row;
 }
 
 // ------------------------------------------------------------------
-// 2. Search Functionality
+// 2. Search
 // ------------------------------------------------------------------
 searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
-    
-    // กรองข้อมูลใน Memory
     const filteredData = allPatientsData.filter(pt => {
         const searchStr = `${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
     });
-
     renderPatients(filteredData);
 });
 
 // ------------------------------------------------------------------
-// 3. Add & Edit Logic
+// 3. Actions (Add / Edit / Discharge / Delete)
 // ------------------------------------------------------------------
+
+// D/C Function (เปลี่ยน Status ไม่ลบ)
+window.dischargeCase = async (docId) => {
+    if(confirm('ยืนยันจำหน่ายผู้ป่วย (Discharge)? \nข้อมูลจะถูกย้ายไปตาราง History')) {
+        try {
+            await updateDoc(doc(db, COLLECTION_NAME, docId), {
+                status: 'Discharged',
+                dischargedAt: serverTimestamp() // เก็บเวลาที่ D/C
+            });
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    }
+}
+
+// Delete Function (ลบถาวร)
+window.deleteCase = async (docId) => {
+    if(confirm('⚠️ ยืนยันลบข้อมูลถาวร? (กู้คืนไม่ได้)')) {
+        try {
+            await deleteDoc(doc(db, COLLECTION_NAME, docId));
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    }
+}
+
+// Add & Edit Form Submit
 if(admitForm) {
     admitForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         submitBtn.innerText = "กำลังบันทึก...";
         submitBtn.disabled = true;
 
-        const editDocId = document.getElementById('edit-doc-id').value; // เช็คว่ามี ID ไหม
-        
-        // เตรียมข้อมูล (ใช้ || null เพื่อให้ field ที่ว่างไม่ error)
+        const editDocId = document.getElementById('edit-doc-id').value;
         const patientData = {
             bed: document.getElementById('bed').value || "",
             date: document.getElementById('admitDate').value || "",
@@ -137,22 +195,24 @@ if(admitForm) {
             diag: document.getElementById('diag').value || "",
             owner: document.getElementById('owner').value || "",
             note: document.getElementById('note').value || "",
-            status: "Active",
+            // ถ้าเป็นการ Edit ให้คง status เดิมไว้, ถ้าใหม่ให้เป็น Active
+            status: editDocId ? undefined : "Active", 
             timestamp: serverTimestamp()
         };
 
+        // ลบ field undefined ออก (กรณี Edit จะได้ไม่ไปทับ status เดิม)
+        if(patientData.status === undefined) delete patientData.status;
+
         try {
             if (editDocId) {
-                // --- กรณีแก้ไข (Update) ---
                 await updateDoc(doc(db, COLLECTION_NAME, editDocId), patientData);
             } else {
-                // --- กรณีเพิ่มใหม่ (Add) ---
                 await addDoc(collection(db, COLLECTION_NAME), patientData);
             }
             closeModal();
         } catch (error) {
-            console.error("Error:", error);
-            alert("บันทึกไม่สำเร็จ: " + error.message);
+            console.error(error);
+            alert("บันทึกไม่สำเร็จ");
         } finally {
             submitBtn.innerText = "บันทึกข้อมูล";
             submitBtn.disabled = false;
@@ -160,16 +220,11 @@ if(admitForm) {
     });
 }
 
-// ฟังก์ชันเปิด Modal สำหรับ Edit
 window.openEditModal = (id) => {
     const pt = allPatientsData.find(p => p.id === id);
     if (!pt) return;
-
-    // เปลี่ยน Title Modal
     modalTitle.innerText = "แก้ไขข้อมูลผู้ป่วย (Edit)";
-    document.getElementById('edit-doc-id').value = id; // ฝัง ID ไว้
-    
-    // กรอกข้อมูลเดิมลงไป
+    document.getElementById('edit-doc-id').value = id;
     document.getElementById('bed').value = pt.bed || "";
     document.getElementById('admitDate').value = pt.date || "";
     document.getElementById('hn').value = pt.hn || "";
@@ -180,39 +235,17 @@ window.openEditModal = (id) => {
     document.getElementById('diag').value = pt.diag || "";
     document.getElementById('owner').value = pt.owner || "";
     document.getElementById('note').value = pt.note || "";
-
     modal.style.display = 'block';
-}
-
-// ------------------------------------------------------------------
-// 4. Delete & Utility Functions
-// ------------------------------------------------------------------
-window.deleteCase = async (docId) => {
-    if(confirm('ยืนยันลบเคสนี้?')) {
-        try {
-            await deleteDoc(doc(db, COLLECTION_NAME, docId));
-        } catch (error) {
-            alert("ลบไม่สำเร็จ: " + error.message);
-        }
-    }
 }
 
 function closeModal() {
     modal.style.display = 'none';
     admitForm.reset();
-    document.getElementById('edit-doc-id').value = ""; // ล้าง ID
+    document.getElementById('edit-doc-id').value = "";
     document.getElementById('admitDate').valueAsDate = new Date();
-    modalTitle.innerText = "รับเคสใหม่ (New Admission)"; // คืนค่า Title เดิม
+    modalTitle.innerText = "รับเคสใหม่ (New Admission)";
 }
 
-// Event Listeners สำหรับ Modal
-if(addBtn) {
-    addBtn.onclick = () => {
-        closeModal(); // ล้างค่าก่อนเปิด เพื่อให้แน่ใจว่าเป็นโหมด Add
-        modal.style.display = 'block';
-    }
-}
+if(addBtn) { addBtn.onclick = () => { closeModal(); modal.style.display = 'block'; } }
 if(closeBtn) closeBtn.onclick = closeModal;
-window.onclick = (e) => {
-    if (e.target == modal) closeModal();
-}
+window.onclick = (e) => { if (e.target == modal) closeModal(); }

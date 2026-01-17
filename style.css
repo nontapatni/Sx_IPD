@@ -79,6 +79,7 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     border: none;
 }
 .btn-edit { background-color: #f39c12; }
+.btn-dc { background-color: #27ae60; } /* ปุ่ม D/C สีเขียว */
 .btn-delete { background-color: #e74c3c; }
 
 /* การ์ดและตาราง */
@@ -88,6 +89,18 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     overflow-x: auto;
+    margin-bottom: 30px; /* เว้นระยะห่างระหว่างตาราง */
+}
+
+/* หัวข้อแบ่งส่วน Active / Discharged */
+.section-header {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #ddd;
+    color: #555;
+    font-size: 1.2em;
+    font-weight: 600;
 }
 
 table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
@@ -143,6 +156,9 @@ th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowr
 .status-badge { 
     background: #d4edda; color: #155724; 
     padding: 2px 8px; border-radius: 10px; font-size: 0.8em; 
+}
+.status-badge.discharged {
+    background: #e2e3e5; color: #383d41; /* สีเทาสำหรับคนไข้ที่ D/C แล้ว */
 }
 
 /* Responsive */
