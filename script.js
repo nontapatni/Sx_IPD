@@ -32,13 +32,14 @@ loginForm.addEventListener('submit', (e) => {
 
     if (inputPass === WARD_PASSCODE) {
         // ถ้ารหัสถูกต้อง
+        localStorage.setItem('sx_ipd_is_logged_in', 'true'); // <--- บันทึกสถานะการล็อกอิน
         loginScreen.style.display = 'none'; // ซ่อนหน้า Login
         appContainer.style.display = 'block'; // แสดงหน้า App
         initApp(); // เริ่มโหลดข้อมูล Firebase
     } else {
         // ถ้ารหัสผิด
         loginError.style.display = 'block';
-        loginError.classList.add('shake'); // (Optional) เพิ่ม Animation สั่นๆ ได้ถ้ามี CSS
+        loginError.classList.add('shake');
         document.getElementById('login-password').value = '';
     }
 });
@@ -56,15 +57,24 @@ const submitBtn = document.getElementById('submit-btn');
 
 let allPatientsData = [];
 
+// --- AUTO LOGIN CHECK (ตรวจสอบตอนโหลดหน้าเว็บ) ---
+if (localStorage.getItem('sx_ipd_is_logged_in') === 'true') {
+    // ถ้าเคยล็อกอินไว้แล้ว ให้ข้ามหน้า Login ไปเลย
+    loginScreen.style.display = 'none';
+    appContainer.style.display = 'block';
+    // รอให้โหลด DOM เสร็จก่อนเล็กน้อย หรือเรียกเลยก็ได้เพราะ module defer อยู่แล้ว
+    initApp();
+}
+
 if(document.getElementById('admitDate')) {
     document.getElementById('admitDate').valueAsDate = new Date();
 }
 
 // ------------------------------------------------------------------
-// 1. Real-time Listener (ย้ายเข้ามาในฟังก์ชัน initApp)
+// 1. Real-time Listener
 // ------------------------------------------------------------------
 function initApp() {
-    console.log("Login Success. Starting Firebase Listener...");
+    console.log("Starting Firebase Listener...");
     
     // เรียงตาม Ward
     const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
@@ -215,6 +225,14 @@ window.deleteCase = async (docId) => {
         } catch (error) {
             alert("Error: " + error.message);
         }
+    }
+}
+
+// --- LOGOUT FUNCTION (เรียกใช้จาก Console หรือปุ่มได้) ---
+window.logout = () => {
+    if(confirm('ต้องการออกจากระบบหรือไม่?')) {
+        localStorage.removeItem('sx_ipd_is_logged_in');
+        location.reload(); // รีเฟรชหน้าจอเพื่อกลับไปหน้า Login
     }
 }
 
