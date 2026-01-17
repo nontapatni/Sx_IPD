@@ -347,7 +347,7 @@ function renderPatients(data) {
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
-    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">Data not found/td></tr>';
+    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
     else activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
 
     if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
@@ -370,7 +370,7 @@ function renderMyPatients(data) {
     const myDischargedCases = myCases.filter(pt => pt.status === 'Discharged');
 
     if (myActiveCases.length === 0) {
-        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่มีเคส Active ที่คุณดูแลอยู่ (${currentUsername})</td></tr>`;
+        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">You have 0 case 🎉</td></tr>`;
     } else {
         myActiveCases.forEach(pt => myPatientsList.appendChild(createPatientRow(pt, true)));
     }
@@ -389,7 +389,7 @@ if(sortSelect) sortSelect.addEventListener('change', () => renderPatients(allPat
 
 if(exportBtn) {
     exportBtn.onclick = () => {
-        if (allPatientsData.length === 0) { alert("ไม่มีข้อมูลให้ Export"); return; }
+        if (allPatientsData.length === 0) { alert("No data to Export"); return; }
         const exportData = allPatientsData.map(pt => ({
             Status: pt.status || 'Active', Ward: pt.ward, Bed: pt.bed, Date: pt.date, HN: pt.hn, AN: pt.an, Name: pt.name, Age: pt.age, Gender: pt.gender, Diagnosis: pt.diag, Owner: pt.owner, Note: pt.note,
             Created_At: pt.createdAt ? new Date(pt.createdAt.seconds * 1000).toLocaleString() : '-',
