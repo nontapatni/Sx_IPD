@@ -46,30 +46,50 @@
             <!-- ================= PAGE 1: PATIENT LIST ================= -->
             <div id="patients-view">
                 <div class="controls-bar">
+                    <!-- ปุ่ม Admit -->
                     <button id="add-btn" class="btn btn-primary">
                         <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
                     </button>
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+
+                    <div class="controls-right">
+                        <!-- ปุ่ม Export Excel -->
+                        <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
+                            <i class="fas fa-file-excel"></i> Export
+                        </button>
+
+                        <!-- Dropdown Sort -->
+                        <div class="sort-box">
+                            <i class="fas fa-sort sort-icon"></i>
+                            <select id="sort-patients">
+                                <option value="ward">เรียงตาม Ward</option>
+                                <option value="bed">เรียงตาม Bed</option>
+                                <option value="date">เรียงตาม Date</option>
+                            </select>
+                        </div>
+
+                        <!-- ช่อง Search -->
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Active Cases -->
-                <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
+                <div class="section-header"><i class="fas fa-procedures"></i> Active Cases</div>
                 <div class="card">
                     <table id="active-table">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">Ward</th>
-                                <th style="width: 60px;">Bed</th>
-                                <th>Date</th>
-                                <th>HN / AN</th>
+                                <th style="width: 70px;">Ward</th>
+                                <th style="width: 50px;">Bed</th>
+                                <th style="width: 90px;">Date</th>
+                                <th style="width: 100px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th>Owner</th>
+                                <th style="width: 100px;">Owner</th>
                                 <th>Note</th>
-                                <th style="width: 120px;">Action</th>
+                                <th style="width: 90px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="patient-list">
@@ -79,18 +99,18 @@
                 </div>
 
                 <!-- Discharged Cases -->
-                <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
+                <div class="section-header"><i class="fas fa-history"></i> Discharged History</div>
                 <div class="card">
                     <table id="discharged-table">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">Ward</th>
-                                <th style="width: 60px;">Bed</th>
-                                <th>Date</th>
-                                <th>HN / AN</th>
+                                <th style="width: 70px;">Ward</th>
+                                <th style="width: 50px;">Bed</th>
+                                <th style="width: 90px;">Date</th>
+                                <th style="width: 100px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th>Owner</th>
+                                <th style="width: 100px;">Owner</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
@@ -107,7 +127,7 @@
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">
                         <button id="add-duty-btn" class="btn btn-primary">
-                            <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
+                            <i class="fas fa-calendar-plus"></i> ลงตารางเวร
                         </button>
                         
                         <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
@@ -121,10 +141,10 @@
                     <table id="schedule-table">
                         <thead>
                             <tr>
-                                <th style="width: 150px;">Date / Day</th>
-                                <th>Ward (เวรวอร์ด)</th> <!-- เปลี่ยนหัวตาราง -->
-                                <th>ER (เวรห้องฉุกเฉิน)</th> <!-- เปลี่ยนหัวตาราง -->
-                                <th style="width: 100px;">Action</th>
+                                <th style="width: 130px;">Date</th>
+                                <th>Ward (เวรวอร์ด)</th>
+                                <th>ER (เวรห้องฉุกเฉิน)</th>
+                                <th style="width: 80px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="duty-list">
@@ -141,7 +161,7 @@
     <div id="modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('modal')">&times;</span>
-            <h2 id="modal-title">รับเคสใหม่ (New Admission)</h2>
+            <h2 id="modal-title">รับเคสใหม่</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
                 
@@ -230,11 +250,11 @@
         </div>
     </div>
 
-    <!-- Modal 2: Add Duty (ปรับฟอร์มใหม่) -->
+    <!-- Modal 2: Add Duty -->
     <div id="duty-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('duty-modal')">&times;</span>
-            <h2>ลงตารางเวร (Add Duty)</h2>
+            <h2>ลงตารางเวร</h2>
             <form id="duty-form">
                 <div class="form-group">
                     <label>วันที่ (Date)</label>

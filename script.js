@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-// เพิ่ม getDocs เข้ามาใน import เพื่อใช้ดึงข้อมูลมาลบ
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -67,6 +66,8 @@ const addBtn = document.getElementById('add-btn');
 const modal = document.getElementById('modal');
 const admitForm = document.getElementById('admit-form');
 const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sort-patients'); // New Sort
+const exportBtn = document.getElementById('export-patient-btn'); // New Export
 const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-btn');
 
@@ -78,8 +79,8 @@ const importExcelBtn = document.getElementById('import-excel-btn');
 const excelInput = document.getElementById('excel-file');
 
 let allPatientsData = [];
-let allDutiesData = []; // เก็บข้อมูลเวรทั้งหมดไว้ Global เพื่อใช้ตอน Edit
-let editingDutyId = null; // ตัวแปรเก็บสถานะว่ากำลังแก้ไขเวรไหนอยู่
+let allDutiesData = [];
+let editingDutyId = null;
 
 // Check Auto Login
 if (localStorage.getItem('sx_ipd_is_logged_in') === 'true') {
@@ -114,26 +115,43 @@ function initApp() {
     // 1.2 Listener for Schedules
     const qSchedule = query(collection(db, SCHEDULE_COLLECTION), orderBy("date"));
     onSnapshot(qSchedule, (snapshot) => {
-        allDutiesData = []; // Reset ข้อมูล Global
+        allDutiesData = [];
         const duties = [];
         snapshot.forEach(doc => {
             const d = { id: doc.id, ...doc.data() };
             duties.push(d);
-            allDutiesData.push(d); // เก็บลง Global
+            allDutiesData.push(d);
         });
         renderSchedule(duties);
     });
 }
 
 // ------------------------------------------------------------------
-// 2. Patient Logic
+// 2. Patient Logic (Sort & Filter & Export)
 // ------------------------------------------------------------------
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput.value.toLowerCase().trim();
-    const filteredData = data.filter(pt => {
+    const sortValue = sortSelect.value; // รับค่าจาก Dropdown
+
+    // 2.1 Filter (Search)
+    let filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
+    });
+
+    // 2.2 Sorting Logic (Client-side)
+    filteredData.sort((a, b) => {
+        if (sortValue === 'bed') {
+            // เรียงเตียงแบบตัวเลข (เช่น 2 มาก่อน 10)
+            return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
+        } else if (sortValue === 'date') {
+            // เรียงวันที่ (ใหม่ -> เก่า หรือ เก่า -> ใหม่ แล้วแต่ชอบ)
+            return new Date(a.date || 0) - new Date(b.date || 0);
+        } else {
+            // Default: เรียง Ward (String)
+            return (a.ward || '').localeCompare(b.ward || '');
+        }
     });
 
     patientList.innerHTML = '';
@@ -149,7 +167,44 @@ function renderPatients(data) {
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
 }
 
+// Event Listeners for Search & Sort
 if(searchInput) searchInput.addEventListener('input', () => renderPatients(allPatientsData));
+if(sortSelect) sortSelect.addEventListener('change', () => renderPatients(allPatientsData));
+
+// Export Excel Function
+if(exportBtn) {
+    exportBtn.onclick = () => {
+        if (allPatientsData.length === 0) {
+            alert("ไม่มีข้อมูลให้ Export");
+            return;
+        }
+
+        // เตรียมข้อมูลสำหรับ Excel (เลือกเฉพาะฟิลด์ที่ต้องการ)
+        const exportData = allPatientsData.map(pt => ({
+            Status: pt.status || 'Active',
+            Ward: pt.ward,
+            Bed: pt.bed,
+            Date: pt.date,
+            HN: pt.hn,
+            AN: pt.an,
+            Name: pt.name,
+            Age: pt.age,
+            Gender: pt.gender,
+            Diagnosis: pt.diag,
+            Owner: pt.owner,
+            Note: pt.note,
+            Created_At: pt.createdAt ? new Date(pt.createdAt.seconds * 1000).toLocaleString() : '-',
+            Updated_At: pt.updatedAt ? new Date(pt.updatedAt.seconds * 1000).toLocaleString() : '-'
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
+        
+        // Save File
+        XLSX.writeFile(workbook, "Sx_IPD_Patients.xlsx");
+    }
+}
 
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
@@ -177,7 +232,7 @@ function createPatientRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 3. Schedule Logic (Improved Import & Edit)
+// 3. Schedule Logic
 // ------------------------------------------------------------------
 function renderSchedule(duties) {
     if(!dutyList) return;
@@ -189,7 +244,6 @@ function renderSchedule(duties) {
 
     duties.forEach(duty => {
         const row = document.createElement('tr');
-        // Safely parse date
         let dateStr = duty.date;
         try {
             const dateObj = new Date(duty.date);
@@ -202,7 +256,6 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
-        // เพิ่มปุ่ม Edit (สีส้ม) ข้างๆ ปุ่ม Delete
         row.innerHTML = `
             <td>
                 <strong>${dateStr}</strong> 
@@ -211,31 +264,27 @@ function renderSchedule(duties) {
             <td>${duty.ward || '-'}</td>
             <td>${duty.er || '-'}</td>
             <td>
-                <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')" style="display:inline-block; margin-right:5px;"><i class="fas fa-edit"></i></button>
-                <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')" style="display:inline-block;"><i class="fas fa-trash"></i></button>
+                <div class="action-buttons">
+                    <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')"><i class="fas fa-trash"></i></button>
+                </div>
             </td>
         `;
         dutyList.appendChild(row);
     });
 }
 
-// ฟังก์ชันเปิด Modal แก้ไขเวร
+// Edit Duty Logic
 window.editDuty = (id) => {
     const duty = allDutiesData.find(d => d.id === id);
     if(!duty) return;
-
-    editingDutyId = id; // ระบุว่ากำลัง Edit
-    
-    // เติมข้อมูลลงฟอร์ม
+    editingDutyId = id;
     document.getElementById('duty-date').value = duty.date;
     document.getElementById('duty-ward').value = duty.ward;
     document.getElementById('duty-er').value = duty.er;
-
-    // เปิด Modal
     if(dutyModal) dutyModal.style.display = 'block';
 }
 
-// Add/Update Duty Submit Handler
 if(dutyForm) {
     dutyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -243,19 +292,17 @@ if(dutyForm) {
             date: document.getElementById('duty-date').value,
             ward: document.getElementById('duty-ward').value,
             er: document.getElementById('duty-er').value,
-            timestamp: serverTimestamp()
+            timestamp: serverTimestamp() // บันทึกเวลาแก้ไข
         };
         try {
             if (editingDutyId) {
-                // กรณีแก้ไข (Update)
                 await updateDoc(doc(db, SCHEDULE_COLLECTION, editingDutyId), dutyData);
             } else {
-                // กรณีเพิ่มใหม่ (Add)
                 await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
             }
             window.closeModal('duty-modal');
             dutyForm.reset();
-            editingDutyId = null; // Reset สถานะ
+            editingDutyId = null;
             document.getElementById('duty-date').valueAsDate = new Date();
         } catch (error) {
             alert("Error saving duty: " + error.message);
@@ -263,17 +310,16 @@ if(dutyForm) {
     });
 }
 
-// ปุ่ม Add Duty ปกติ (ต้อง Reset สถานะ Edit ออก)
 if(addDutyBtn) {
     addDutyBtn.onclick = () => { 
         dutyForm.reset(); 
-        editingDutyId = null; // เป็นโหมดเพิ่มใหม่
+        editingDutyId = null;
         document.getElementById('duty-date').valueAsDate = new Date();
         dutyModal.style.display = 'block'; 
     };
 }
 
-// ✅ Improved Import Excel Logic (Clear Old Data Logic Added)
+// Import Excel Logic
 if (importExcelBtn && excelInput) {
     importExcelBtn.onclick = () => excelInput.click();
     
@@ -281,9 +327,8 @@ if (importExcelBtn && excelInput) {
         const file = e.target.files[0];
         if(!file) return;
 
-        // ยืนยันการลบข้อมูลเก่า
         if(!confirm('⚠️ คำเตือน: การ Import จะ "ลบข้อมูลตารางเวรเก่าทั้งหมด" \nและแทนที่ด้วยข้อมูลจากไฟล์ Excel\n\nยืนยันหรือไม่?')) {
-            excelInput.value = ''; // ยกเลิกแล้วล้าง input
+            excelInput.value = '';
             return;
         }
 
@@ -294,21 +339,12 @@ if (importExcelBtn && excelInput) {
                 const workbook = XLSX.read(data, {type: 'array'});
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { cellDates: true, defval: "" }); 
                 
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                    cellDates: true, 
-                    defval: "" 
-                }); 
-                
-                // --- STEP 1: ลบข้อมูลเก่าทั้งหมด (Clear Collection) ---
-                console.log("Clearing old schedule...");
                 const snapshot = await getDocs(collection(db, SCHEDULE_COLLECTION));
-                // สร้าง Promise array เพื่อลบทุก doc พร้อมกัน (หรือทีละตัว)
                 const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
                 await Promise.all(deletePromises);
-                console.log("Old schedule cleared.");
 
-                // --- STEP 2: เพิ่มข้อมูลใหม่ ---
                 let count = 0;
                 for(const row of jsonData) {
                     const keys = Object.keys(row);
@@ -341,7 +377,7 @@ if (importExcelBtn && excelInput) {
                             date: dateStr,
                             ward: wardKey ? row[wardKey] : "",
                             er: erKey ? row[erKey] : "",
-                            timestamp: serverTimestamp()
+                            timestamp: serverTimestamp() // บันทึกเวลา Import
                         });
                         count++;
                     }
@@ -358,7 +394,6 @@ if (importExcelBtn && excelInput) {
     });
 }
 
-// Delete Duty
 window.deleteDuty = async (docId) => {
     if(confirm('ลบรายการเวรนี้?')) {
         await deleteDoc(doc(db, SCHEDULE_COLLECTION, docId));
@@ -368,8 +403,8 @@ window.deleteDuty = async (docId) => {
 // ------------------------------------------------------------------
 // 4. Shared Actions
 // ------------------------------------------------------------------
-window.dischargeCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Discharged', dischargedAt: serverTimestamp() });
-window.readmitCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Active', dischargedAt: null });
+window.dischargeCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Discharged', dischargedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+window.readmitCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Active', dischargedAt: null, updatedAt: serverTimestamp() });
 window.deleteCase = async (docId) => { if(confirm('⚠️ ยืนยันลบข้อมูลถาวร?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
 window.logout = () => { if(confirm('ต้องการออกจากระบบหรือไม่?')) { localStorage.removeItem('sx_ipd_is_logged_in'); location.reload(); } };
 
@@ -393,8 +428,15 @@ if(admitForm) {
             owner: document.getElementById('owner').value || "",
             note: document.getElementById('note').value || "",
             status: editDocId ? undefined : "Active",
-            timestamp: serverTimestamp()
+            // บันทึกเวลา
+            updatedAt: serverTimestamp()
         };
+        
+        // ถ้าเป็นเคสใหม่ ให้เพิ่ม createdAt
+        if (!editDocId) {
+            patientData.createdAt = serverTimestamp();
+        }
+
         if(patientData.status === undefined) delete patientData.status;
 
         try {
