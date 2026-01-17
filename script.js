@@ -44,7 +44,7 @@ onAuthStateChanged(auth, (user) => {
         currentUsername = user.email.replace(EMAIL_DOMAIN, '').toLowerCase(); 
         console.log("Logged in:", currentUsername);
         
-        // Check Admin -> Show/Hide Buttons
+        // Check Admin
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
         const addUserBtn = document.getElementById('open-create-user-btn');
         const settingsBtn = document.getElementById('open-settings-btn');
@@ -56,7 +56,6 @@ onAuthStateChanged(auth, (user) => {
         // ซ่อน Tab My Patients ถ้าเป็น Admin
         if(myPatientTab) myPatientTab.style.display = isAdmin ? 'none' : 'block';
 
-        // แสดงชื่อผู้ใช้
         const usernameDisplay = document.getElementById('user-info');
         if (usernameDisplay) {
             usernameDisplay.innerHTML = `<i class="fas fa-user-circle"></i> Log in as: ${currentUsername}`;
@@ -125,7 +124,7 @@ if (createUserForm) {
     });
 }
 
-// CHANGE PASSWORD (SELF)
+// CHANGE PASSWORD
 const changePassForm = document.getElementById('change-password-form');
 if (changePassForm) {
     changePassForm.addEventListener('submit', async (e) => {
@@ -172,21 +171,17 @@ const settingsForm = document.getElementById('settings-form');
 
 function loadDropdownSettings() {
     const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
-    
     onSnapshot(docRef, (docSnap) => {
         let data = docSnap.data();
-        
-        // Default Data
         if (!docSnap.exists()) {
             data = {
-                wards: ["Sx ชาย", "Sx หญิง"],
-                owners: ["Phone", "Ice", "Jeng", "Pai", "Sunny", "Title", "Pol"]
+                wards: ["Sx ชาย", "Sx หญิง", "Burn Unit", "SICU", "Trauma", "Private"],
+                owners: ["อ.สมศักดิ์", "อ.วิชัย", "R4 Somjai", "R3 Somsri"]
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
-            // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
-            data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
+            data.owners = combined.length ? combined : ["อ.สมศักดิ์"];
         }
 
         updateSelectOptions('ward', data.wards);
@@ -242,7 +237,7 @@ const dischargedList = document.getElementById('discharged-list');
 const myPatientsList = document.getElementById('mypatients-list'); 
 const myPatientsDischargedList = document.getElementById('mypatients-discharged-list');
 const newCasesList = document.getElementById('new-cases-list');
-const summaryList = document.getElementById('summary-list'); // Table Summary
+const summaryList = document.getElementById('summary-list'); // ✅ Table Summary List
 const dutyList = document.getElementById('duty-list');
 
 const addBtn = document.getElementById('add-btn');
@@ -275,16 +270,11 @@ window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
-    document.getElementById('summary-view').style.display = 'none';
     document.getElementById('patients-view').style.display = 'none';
     document.getElementById('mypatients-view').style.display = 'none';
     document.getElementById('schedule-view').style.display = 'none';
 
-    if (tabName === 'summary') {
-        document.getElementById('summary-view').style.display = 'block';
-        renderSummary(allPatientsData);
-    }
-    else if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
+    if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
     else if (tabName === 'mypatients') {
         document.getElementById('mypatients-view').style.display = 'block';
         renderMyPatients(allPatientsData);
@@ -305,13 +295,13 @@ function initApp() {
         querySnapshot.forEach((docSnap) => {
             allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
         });
+        // Render All
         renderPatients(allPatientsData);
         renderMyPatients(allPatientsData);
-        renderSummary(allPatientsData); // Render Summary
+        renderSummary(allPatientsData); // ✅ Update Summary Table
     }, (error) => {
-        // Error Handler for Patients
         console.error(error);
-        if(patientList) patientList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error loading patients: ${error.message}</td></tr>`;
+        if(patientList) patientList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error: ${error.message}</td></tr>`;
     });
 
     // 2. Schedule Listener
@@ -326,71 +316,12 @@ function initApp() {
         });
         renderSchedule(duties);
     }, (error) => {
-        // Error Handler for Schedule
         console.error(error);
-        if(dutyList) dutyList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error loading schedule: ${error.message}</td></tr>`;
+        if(dutyList) dutyList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error: ${error.message}</td></tr>`;
     });
 }
 
-// --- RENDER ALL PATIENTS ---
-function renderPatients(data) {
-    if(!patientList) return;
-    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    const sortValue = sortSelect ? sortSelect.value : "ward";
-
-    let filteredData = data.filter(pt => {
-        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
-        return searchStr.includes(keyword);
-    });
-
-    filteredData.sort((a, b) => {
-        if (sortValue === 'bed') return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
-        else if (sortValue === 'date') return new Date(a.date || 0) - new Date(b.date || 0);
-        else return (a.ward || '').localeCompare(b.ward || '');
-    });
-
-    patientList.innerHTML = '';
-    dischargedList.innerHTML = '';
-    if(newCasesList) newCasesList.innerHTML = ''; // Clear New Cases
-    
-    const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
-    const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
-
-    // --- Active Cases ---
-    if (activeCases.length === 0) {
-        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
-    } else {
-        activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
-    }
-
-    // --- Discharged Cases ---
-    if (dischargedCases.length === 0) {
-        dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
-    } else {
-        dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
-    }
-
-    // --- ✅ New Cases (Last 24h) ---
-    if (newCasesList) {
-        const now = new Date();
-        const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-
-        const recentCases = activeCases.filter(pt => {
-            if (!pt.createdAt) return false;
-            // Handle Firestore Timestamp
-            const createdDate = pt.createdAt.toDate ? pt.createdAt.toDate() : new Date(pt.createdAt.seconds * 1000);
-            return createdDate >= oneDayAgo;
-        });
-
-        if (recentCases.length === 0) {
-            newCasesList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>';
-        } else {
-            recentCases.forEach(pt => newCasesList.appendChild(createPatientRow(pt, true)));
-        }
-    }
-}
-
-// --- RENDER SUMMARY ---
+// --- RENDER SUMMARY (NEW) ---
 function renderSummary(data) {
     if(!summaryList) return;
     summaryList.innerHTML = '';
@@ -422,6 +353,51 @@ function renderSummary(data) {
     });
 }
 
+// --- RENDER ALL PATIENTS ---
+function renderPatients(data) {
+    if(!patientList) return;
+    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const sortValue = sortSelect ? sortSelect.value : "ward";
+
+    let filteredData = data.filter(pt => {
+        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
+        return searchStr.includes(keyword);
+    });
+
+    filteredData.sort((a, b) => {
+        if (sortValue === 'bed') return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
+        else if (sortValue === 'date') return new Date(a.date || 0) - new Date(b.date || 0);
+        else return (a.ward || '').localeCompare(b.ward || '');
+    });
+
+    patientList.innerHTML = '';
+    dischargedList.innerHTML = '';
+    if(newCasesList) newCasesList.innerHTML = '';
+    
+    const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
+    const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
+
+    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">0 Active cases</td></tr>';
+    else activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
+
+    if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
+    else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
+
+    // New Cases (Last 24h)
+    if (newCasesList) {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+        const recentCases = activeCases.filter(pt => {
+            if (!pt.createdAt) return false;
+            const createdDate = pt.createdAt.toDate ? pt.createdAt.toDate() : new Date(pt.createdAt.seconds * 1000);
+            return createdDate >= oneDayAgo;
+        });
+
+        if (recentCases.length === 0) newCasesList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>';
+        else recentCases.forEach(pt => newCasesList.appendChild(createPatientRow(pt, true)));
+    }
+}
+
 // --- RENDER MY PATIENTS ---
 function renderMyPatients(data) {
     if(!myPatientsList) return;
@@ -437,18 +413,12 @@ function renderMyPatients(data) {
     const myActiveCases = myCases.filter(pt => pt.status !== 'Discharged');
     const myDischargedCases = myCases.filter(pt => pt.status === 'Discharged');
 
-    if (myActiveCases.length === 0) {
-        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">You have 0 case 🎉</td></tr>`;
-    } else {
-        myActiveCases.forEach(pt => myPatientsList.appendChild(createPatientRow(pt, true)));
-    }
+    if (myActiveCases.length === 0) myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">0 My active cases</td></tr>`;
+    else myActiveCases.forEach(pt => myPatientsList.appendChild(createPatientRow(pt, true)));
 
     if(myPatientsDischargedList) {
-        if (myDischargedCases.length === 0) {
-            myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>`;
-        } else {
-            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
-        }
+        if (myDischargedCases.length === 0) myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">No my discharged history</td></tr>`;
+        else myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
     }
 }
 
@@ -482,9 +452,7 @@ function createPatientRow(pt, isActive) {
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     `;
 
-    // Highlight Owner Name (New Logic)
     let displayOwner = pt.owner || '-';
-    // เช็คว่ามี Username และชื่อ Owner มีส่วนที่ตรงกันหรือไม่
     if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
          const highlightStyle = "font-weight: bold; color: #2980b9; background-color: #d6eaf8; padding: 2px 6px; border-radius: 4px; display: inline-block;";
          displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
@@ -521,10 +489,9 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
-        // Highlight Own Name in Schedule
-        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
         let displayWard = duty.ward || '-';
         let displayEr = duty.er || '-';
+        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
 
         if (currentUsername && displayWard.toLowerCase().includes(currentUsername)) {
              displayWard = `<span style="${highlightStyle}">${displayWard}</span>`;
