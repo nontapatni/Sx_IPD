@@ -37,8 +37,9 @@ if(document.getElementById('admitDate')) {
 // ------------------------------------------------------------------
 // 1. Real-time Listener
 // ------------------------------------------------------------------
-// เรียงตาม Ward ก่อน แล้วค่อยเรียงตาม Bed เพื่อความเป็นระเบียบ
-const q = query(collection(db, COLLECTION_NAME), orderBy("ward"), orderBy("bed"));
+// แก้ไข: เรียงแค่ Ward อย่างเดียวก่อน เพื่อแก้ปัญหา Index Error (ข้อมูลจะขึ้นทันที)
+// หากต้องการเรียง Ward + Bed ต้องไปกดสร้าง Composite Index ใน Firebase Console ตามลิงก์ที่ขึ้นใน F12 ก่อน
+const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
 
 onSnapshot(q, (querySnapshot) => {
     allPatientsData = [];
