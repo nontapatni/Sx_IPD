@@ -287,7 +287,9 @@ window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
-    document.getElementById('summary-section').style.display = 'block'; // Always show summary by default
+    // Default: Show Summary Section everywhere
+    document.getElementById('summary-section').style.display = 'block'; 
+
     document.getElementById('patients-view').style.display = 'none';
     document.getElementById('mypatients-view').style.display = 'none';
     document.getElementById('schedule-view').style.display = 'none';
@@ -301,7 +303,7 @@ window.switchTab = (tabName) => {
     }
     else if (tabName === 'schedule') {
         document.getElementById('schedule-view').style.display = 'block';
-        document.getElementById('summary-section').style.display = 'none'; // Hide summary on schedule page
+        // ❌ Removed line that hides summary section
     }
 }
 
@@ -378,17 +380,63 @@ function renderSummary(data) {
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    const sortValue = sortSelect ? sortSelect.value : "ward";
+    const sortValue = sortSelect ? sortSelect.value : "ward_bed"; // Default เป็น Ward -> Bed
 
     let filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
     });
 
+    // ✅ Multi-Level Sorting Logic
     filteredData.sort((a, b) => {
-        if (sortValue === 'bed') return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
-        else if (sortValue === 'date') return new Date(a.date || 0) - new Date(b.date || 0);
-        else return (a.ward || '').localeCompare(b.ward || '');
+        const wardA = (a.ward || '').toLowerCase();
+        const wardB = (b.ward || '').toLowerCase();
+        
+        const bedA = (a.bed || '').toString();
+        const bedB = (b.bed || '').toString();
+
+        const ownerA = (a.owner || '').toLowerCase();
+        const ownerB = (b.owner || '').toLowerCase();
+
+        const dateA = new Date(a.date || 0);
+        const dateB = new Date(b.date || 0);
+
+        switch (sortValue) {
+            case 'ward_bed':
+                // เรียง Ward ก่อน
+                if (wardA < wardB) return -1;
+                if (wardA > wardB) return 1;
+                // ถ้า Ward เท่ากัน ให้เรียงตาม Bed (แบบ Numeric: 2 มาก่อน 10)
+                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+
+            case 'bed':
+                // เรียงตาม Bed อย่างเดียว
+                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+
+            case 'date_new':
+                // ใหม่ -> เก่า
+                return dateB - dateA;
+
+            case 'date_old':
+                // เก่า -> ใหม่
+                return dateA - dateB;
+
+            case 'owner_ward':
+                // เรียง Owner ก่อน
+                if (ownerA < ownerB) return -1;
+                if (ownerA > ownerB) return 1;
+                // ถ้า Owner เท่ากัน ให้เรียงตาม Ward
+                if (wardA < wardB) return -1;
+                if (wardA > wardB) return 1;
+                // ถ้า Ward เท่ากันอีก ให้เรียงตาม Bed
+                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+
+            default:
+                // Default: Ward -> Bed
+                if (wardA < wardB) return -1;
+                if (wardA > wardB) return 1;
+                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+        }
     });
 
     patientList.innerHTML = '';
@@ -398,25 +446,28 @@ function renderPatients(data) {
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
+    // --- Active Cases ---
     if (activeCases.length === 0) {
         patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
     } else {
         activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
     }
 
+    // --- Discharged Cases ---
     if (dischargedCases.length === 0) {
         dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
     } else {
         dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
     }
 
-    // New Cases (Last 24h)
+    // --- ✅ New Cases (Last 24h) ---
     if (newCasesList) {
         const now = new Date();
         const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
 
         const recentCases = activeCases.filter(pt => {
             if (!pt.createdAt) return false;
+            // Handle Firestore Timestamp
             const createdDate = pt.createdAt.toDate ? pt.createdAt.toDate() : new Date(pt.createdAt.seconds * 1000);
             return createdDate >= oneDayAgo;
         });
@@ -526,9 +577,10 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
+        // Highlight Own Name in Schedule
+        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
         let displayWard = duty.ward || '-';
         let displayEr = duty.er || '-';
-        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
 
         if (currentUsername && displayWard.toLowerCase().includes(currentUsername)) {
              displayWard = `<span style="${highlightStyle}">${displayWard}</span>`;

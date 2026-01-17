@@ -65,15 +65,14 @@
             <div id="summary-section" style="margin-bottom: 20px;">
                 <div class="card" style="background: #fdfefe; border-left: 4px solid #27ae60;">
                     <div style="padding-bottom: 10px; font-weight: bold; color: #555; border-bottom: 1px solid #eee; margin-bottom: 10px;">
-                        <i class="fas fa-chart-bar"></i> สรุปยอดคนไข้ (Active Cases by Owner)
+                        <i class="fas fa-chart-bar"></i> Summary stat
                     </div>
                     <table id="summary-table">
                         <thead>
-                            <!-- ✅ ลบ style width: 150px ออก เพื่อให้ปรับขนาดอัตโนมัติ -->
                             <tr style="background-color: transparent;">
                                 <th>Owner Name</th>
-                                <th style="text-align: center; color: #27ae60;">Active Cases</th>
-                                <th style="text-align: center; color: #7f8c8d;">Total Cases</th>
+                                <th style="width: 150px; text-align: center; color: #27ae60;">Active Cases</th>
+                                <th style="width: 150px; text-align: center; color: #7f8c8d;">Total Cases</th>
                             </tr>
                         </thead>
                         <tbody id="summary-list">
@@ -107,9 +106,11 @@
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
-                                <option value="ward">Sort by Ward</option>
-                                <option value="bed">Sort by Bed</option>
-                                <option value="date">Sort by Date of Admission</option>
+                                <option value="ward_bed">เรียงตาม Ward -> Bed</option>
+                                <option value="bed">เรียงตาม Bed (เลขเตียง)</option>
+                                <option value="date_new">Admit Date (ใหม่ -> เก่า)</option>
+                                <option value="date_old">Admit Date (เก่า -> ใหม่)</option>
+                                <option value="owner_ward">เรียงตาม Owner -> Ward</option>
                             </select>
                         </div>
 
