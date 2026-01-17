@@ -96,6 +96,7 @@ function createRow(pt, isActive) {
     
     let actionButtons = '';
     if (isActive) {
+        // ปุ่มสำหรับ Active Case (Edit, D/C, Delete)
         actionButtons = `
             <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')" title="แก้ไข">
                 <i class="fas fa-edit"></i>
@@ -108,20 +109,23 @@ function createRow(pt, isActive) {
             </button>
         `;
     } else {
+        // ปุ่มสำหรับ Discharged Case (Return to Active, Delete)
+        // เพิ่มปุ่ม Return สีฟ้า (#3498db)
         actionButtons = `
+            <button class="btn-sm" style="background-color: #3498db;" onclick="window.readmitCase('${pt.id}')" title="ย้ายกลับ Active">
+                <i class="fas fa-undo"></i> Return
+            </button>
             <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')" title="ลบประวัติถาวร">
                 <i class="fas fa-trash"></i>
             </button>
         `;
     }
 
-    const badgeClass = isActive ? 'status-badge' : 'status-badge discharged';
-    
+    // ลบส่วนแสดง Status badge ออกจากคอลัมน์ Bed ตามที่ขอ
     row.innerHTML = `
-        <td><strong>${pt.ward || '-'}</strong></td> <!-- เพิ่มช่อง Ward -->
+        <td><strong>${pt.ward || '-'}</strong></td>
         <td>
             <div style="font-size:1.1em;">${pt.bed || '?'}</div>
-            <div class="${badgeClass}">${pt.status || 'Active'}</div>
         </td>
         <td>${pt.date || '-'}</td>
         <td>
@@ -161,6 +165,7 @@ searchInput.addEventListener('input', (e) => {
 // 3. Actions
 // ------------------------------------------------------------------
 
+// ฟังก์ชัน Discharge
 window.dischargeCase = async (docId) => {
     if(confirm('ยืนยันจำหน่ายผู้ป่วย (Discharge)?')) {
         try {
@@ -174,6 +179,21 @@ window.dischargeCase = async (docId) => {
     }
 }
 
+// ฟังก์ชันดึงเคสกลับ (Undo Discharge / Re-admit)
+window.readmitCase = async (docId) => {
+    if(confirm('ยืนยันย้ายผู้ป่วยรายนี้กลับไป Active List?')) {
+        try {
+            await updateDoc(doc(db, COLLECTION_NAME, docId), {
+                status: 'Active',
+                dischargedAt: null // เคลียร์เวลาจำหน่ายออก
+            });
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    }
+}
+
+// ฟังก์ชันลบถาวร
 window.deleteCase = async (docId) => {
     if(confirm('⚠️ ยืนยันลบข้อมูลถาวร?')) {
         try {
