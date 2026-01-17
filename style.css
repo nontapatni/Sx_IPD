@@ -42,8 +42,8 @@ body {
     color: white;
 }
 
-/* --- LOGIN SCREEN --- */
-#login-screen {
+/* --- AUTH SCREEN --- */
+#auth-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -69,8 +69,33 @@ body {
 .login-logo { font-size: 50px; color: #3498db; margin-bottom: 10px; }
 .login-card h2 { margin: 10px 0 5px; color: #2c3e50; }
 .login-card p { color: #7f8c8d; margin-bottom: 25px; font-size: 0.9em; }
-.login-input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; outline: none; }
-.btn-login { width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+
+.login-input {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    font-family: 'Sarabun', sans-serif;
+    outline: none;
+}
+.login-input:focus { border-color: #3498db; }
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    margin-top: 10px;
+}
+.btn-login:hover { background-color: #2980b9; }
+
 .login-error { color: #e74c3c; font-size: 0.9em; margin-top: 10px; display: none; }
 
 /* --- MAIN APP --- */
@@ -108,23 +133,21 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
 }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
 
-/* Sort Box (ปรับปรุงใหม่ให้สวยขึ้นบน PC) */
+/* Sort Box */
 .sort-box { position: relative; min-width: 180px; }
 .sort-box select {
     width: 100%;
-    padding: 10px 35px 10px 35px; /* ปรับ Padding ให้เท่ากับ Search Box */
+    padding: 10px 35px 10px 35px;
     border: 1px solid #ccc;
     border-radius: 20px;
     outline: none;
     font-family: 'Sarabun', sans-serif;
     cursor: pointer;
-    
-    /* ลบลูกศรเดิมของ Browser แล้วใส่ Custom Arrow */
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 15px center;
+    background-size: 10px;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 15px center;
-    background-size: 10px;
 }
 .sort-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 12px; pointer-events: none;}
 

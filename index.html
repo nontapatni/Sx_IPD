@@ -12,25 +12,48 @@
 <body>
 
     <!-- 🔒 LOGIN SCREEN -->
-    <div id="login-screen">
+    <div id="auth-screen">
         <div class="login-card">
             <div class="login-logo"><i class="fas fa-hospital-user"></i></div>
-            <h2>Sx IPD Login</h2>
-            <p>กรุณากรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
+            <h2 id="auth-title">เข้าสู่ระบบ (Login)</h2>
+            <p id="auth-subtitle">ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม</p>
+            
+            <!-- FORM: LOGIN (Username Only) -->
             <form id="login-form">
-                <input type="password" id="login-password" class="login-input" placeholder="Enter Ward Passcode" required>
-                <button type="submit" class="btn-login">เข้าสู่ระบบ (Login)</button>
-                <div id="login-error" class="login-error">รหัสผ่านไม่ถูกต้อง!</div>
+                <div class="form-group">
+                    <!-- เปลี่ยน type="email" เป็น text และ placeholder -->
+                    <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username)" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" class="login-input" placeholder="รหัสผ่าน (Password)" required>
+                </div>
+                <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
             </form>
+
+            <div id="auth-error" class="login-error"></div>
         </div>
     </div>
 
     <!-- 🏥 MAIN APP -->
     <div id="app-container">
         <div class="container">
-            <header>
-                <h1>🏥 Sx IPD Ward Manager</h1>
-                <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+            <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1>🏥 Sx IPD Ward Manager</h1>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+                </div>
+                
+                <!-- Header Buttons -->
+                <div style="display: flex; gap: 10px;">
+                    <!-- ปุ่มเพิ่ม User ใหม่ (Admin Only) -->
+                    <button id="open-create-user-btn" class="btn-sm" style="background-color: #8e44ad; color: white; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ (Add Staff)
+                    </button>
+                    <!-- ปุ่ม Logout -->
+                    <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
             </header>
 
             <!-- 🟢 TAB NAVIGATION -->
@@ -46,18 +69,15 @@
             <!-- ================= PAGE 1: PATIENT LIST ================= -->
             <div id="patients-view">
                 <div class="controls-bar">
-                    <!-- ปุ่ม Admit -->
                     <button id="add-btn" class="btn btn-primary">
                         <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
                     </button>
 
                     <div class="controls-right">
-                        <!-- ปุ่ม Export Excel -->
                         <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
                             <i class="fas fa-file-excel"></i> Export
                         </button>
 
-                        <!-- Dropdown Sort -->
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
@@ -67,7 +87,6 @@
                             </select>
                         </div>
 
-                        <!-- ช่อง Search -->
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
@@ -83,9 +102,9 @@
                             <tr>
                                 <th style="width: 70px;">Ward</th>
                                 <th style="width: 50px;">Bed</th>
-                                <th style="width: 100px;">Date</th>
-                                <th style="width: 200px;">HN / AN</th>
-                                <th style="width: 200px;">Patient Info</th>
+                                <th style="width: 90px;">Date</th>
+                                <th style="width: 100px;">HN / AN</th>
+                                <th>Patient Info</th>
                                 <th>Diagnosis</th>
                                 <th style="width: 100px;">Owner</th>
                                 <th>Note</th>
@@ -269,6 +288,28 @@
                     <input type="text" id="duty-er" placeholder="เช่น R2 Sompong / Intern A">
                 </div>
                 <button type="submit" class="btn btn-submit">บันทึกเวร</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Create User (New) -->
+    <div id="create-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('create-user-modal')">&times;</span>
+            <h2 style="color: #8e44ad;"><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ใหม่ (Add Staff)</h2>
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">กำหนด Username และ Password ให้เจ้าหน้าที่</p>
+            
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label>Username (ชื่อผู้ใช้)</label>
+                    <input type="text" id="new-username" placeholder="เช่น somchai, nurse1, extern_a" required pattern="[a-zA-Z0-9_]+" title="ภาษาอังกฤษ ตัวเลข หรือ _ เท่านั้น">
+                </div>
+                <div class="form-group">
+                    <label>Password (รหัสผ่าน)</label>
+                    <input type="text" id="new-password" placeholder="อย่างน้อย 6 ตัวอักษร" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-submit" style="background-color: #8e44ad;">สร้างบัญชี</button>
+                <div id="create-user-msg" style="margin-top:10px; font-size:0.9em;"></div>
             </form>
         </div>
     </div>

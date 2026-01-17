@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -12,39 +13,155 @@ const firebaseConfig = {
     measurementId: "G-VKXGJ4M03C"
 };
 
+// --- MAIN APP INSTANCE ---
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const auth = getAuth(app);
 const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
 const SCHEDULE_COLLECTION = "schedules";
 
-// --- LOGIN LOGIC ---
-const loginForm = document.getElementById('login-form');
-const loginScreen = document.getElementById('login-screen');
-const appContainer = document.getElementById('app-container');
-const loginError = document.getElementById('login-error');
-const WARD_PASSCODE = "1234"; 
+// --- SECONDARY APP INSTANCE (สำหรับสร้าง User โดยไม่ logout admin) ---
+const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = getAuth(secondaryApp);
 
-if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+// --- AUTH LOGIC ---
+const authScreen = document.getElementById('auth-screen');
+const appContainer = document.getElementById('app-container');
+const authError = document.getElementById('auth-error');
+const loginForm = document.getElementById('login-form');
+
+// Domain ปลอมเพื่อหลอก Firebase ว่าเป็น Email
+const EMAIL_DOMAIN = "@ward.local"; 
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("Logged in as:", user.email);
+        authScreen.style.display = 'none';
+        appContainer.style.display = 'block';
+        initApp(); 
+    } else {
+        console.log("No user logged in");
+        authScreen.style.display = 'flex';
+        appContainer.style.display = 'none';
+    }
+});
+
+// LOGIN Handler
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    authError.style.display = 'none';
+
+    // แปลง Username เป็น Email ปลอม
+    const fakeEmail = username + EMAIL_DOMAIN;
+
+    try {
+        await signInWithEmailAndPassword(auth, fakeEmail, password);
+    } catch (error) {
+        console.error(error);
+        authError.innerText = getErrorMessage(error.code);
+        authError.style.display = 'block';
+    }
+});
+
+// CREATE USER Handler (Admin สร้างให้)
+const createUserForm = document.getElementById('create-user-form');
+const createUserModal = document.getElementById('create-user-modal');
+const createUserMsg = document.getElementById('create-user-msg');
+
+if (createUserForm) {
+    createUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (document.getElementById('login-password').value === WARD_PASSCODE) {
-            localStorage.setItem('sx_ipd_is_logged_in', 'true');
-            loginScreen.style.display = 'none';
-            appContainer.style.display = 'block';
-            initApp();
-        } else {
-            loginError.style.display = 'block';
-            document.getElementById('login-password').value = '';
+        const newUsername = document.getElementById('new-username').value.trim();
+        const newPassword = document.getElementById('new-password').value;
+        const newFakeEmail = newUsername + EMAIL_DOMAIN;
+
+        createUserMsg.style.color = "blue";
+        createUserMsg.innerText = "กำลังสร้างบัญชี...";
+
+        try {
+            // ใช้ secondaryAuth เพื่อไม่ให้ Admin หลุด
+            await createUserWithEmailAndPassword(secondaryAuth, newFakeEmail, newPassword);
+            
+            // Sign out จาก secondary auth ทันทีเพื่อความปลอดภัย (แต่ไม่กระทบ Main auth)
+            await signOut(secondaryAuth);
+
+            createUserMsg.style.color = "green";
+            createUserMsg.innerText = `สร้างบัญชี "${newUsername}" สำเร็จ!`;
+            
+            // Reset Form & Close Modal after delay
+            setTimeout(() => {
+                createUserForm.reset();
+                createUserMsg.innerText = "";
+                window.closeModal('create-user-modal');
+            }, 1500);
+
+        } catch (error) {
+            console.error(error);
+            createUserMsg.style.color = "red";
+            createUserMsg.innerText = getErrorMessage(error.code);
         }
     });
 }
 
-// --- UI Logic: Tabs & Modals ---
+// LOGOUT Function
+window.logout = async () => {
+    if(confirm('ต้องการออกจากระบบหรือไม่?')) {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            alert("Error logging out: " + error.message);
+        }
+    }
+}
+
+function getErrorMessage(code) {
+    switch (code) {
+        case 'auth/invalid-email': return "รูปแบบชื่อผู้ใช้ไม่ถูกต้อง";
+        case 'auth/user-not-found': return "ไม่พบชื่อผู้ใช้นี้";
+        case 'auth/wrong-password': return "รหัสผ่านไม่ถูกต้อง";
+        case 'auth/email-already-in-use': return "ชื่อผู้ใช้นี้มีคนใช้แล้ว";
+        case 'auth/weak-password': return "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
+        case 'auth/invalid-credential': return "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        default: return "เกิดข้อผิดพลาด: " + code;
+    }
+}
+
+// --- APP LOGIC ---
+const patientList = document.getElementById('patient-list');
+const dischargedList = document.getElementById('discharged-list');
+const dutyList = document.getElementById('duty-list');
+const addBtn = document.getElementById('add-btn');
+const modal = document.getElementById('modal');
+const admitForm = document.getElementById('admit-form');
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sort-patients');
+const exportBtn = document.getElementById('export-patient-btn');
+const modalTitle = document.getElementById('modal-title');
+const submitBtn = document.getElementById('submit-btn');
+
+const addDutyBtn = document.getElementById('add-duty-btn');
+const dutyModal = document.getElementById('duty-modal');
+const dutyForm = document.getElementById('duty-form');
+
+const importExcelBtn = document.getElementById('import-excel-btn');
+const excelInput = document.getElementById('excel-file');
+
+const openCreateUserBtn = document.getElementById('open-create-user-btn');
+
+let allPatientsData = [];
+let allDutiesData = [];
+let editingDutyId = null;
+
+if(document.getElementById('admitDate')) document.getElementById('admitDate').valueAsDate = new Date();
+if(document.getElementById('duty-date')) document.getElementById('duty-date').valueAsDate = new Date();
+
+// Tabs
 window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
-
     if (tabName === 'patients') {
         document.getElementById('patients-view').style.display = 'block';
         document.getElementById('schedule-view').style.display = 'none';
@@ -58,51 +175,8 @@ window.closeModal = (modalId) => {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// Global Elements
-const patientList = document.getElementById('patient-list');
-const dischargedList = document.getElementById('discharged-list');
-const dutyList = document.getElementById('duty-list');
-const addBtn = document.getElementById('add-btn');
-const modal = document.getElementById('modal');
-const admitForm = document.getElementById('admit-form');
-const searchInput = document.getElementById('searchInput');
-const sortSelect = document.getElementById('sort-patients'); // New Sort
-const exportBtn = document.getElementById('export-patient-btn'); // New Export
-const modalTitle = document.getElementById('modal-title');
-const submitBtn = document.getElementById('submit-btn');
-
-const addDutyBtn = document.getElementById('add-duty-btn');
-const dutyModal = document.getElementById('duty-modal');
-const dutyForm = document.getElementById('duty-form');
-
-const importExcelBtn = document.getElementById('import-excel-btn');
-const excelInput = document.getElementById('excel-file');
-
-let allPatientsData = [];
-let allDutiesData = [];
-let editingDutyId = null;
-
-// Check Auto Login
-if (localStorage.getItem('sx_ipd_is_logged_in') === 'true') {
-    if(loginScreen) loginScreen.style.display = 'none';
-    if(appContainer) appContainer.style.display = 'block';
-    initApp();
-}
-
-if(document.getElementById('admitDate')) {
-    document.getElementById('admitDate').valueAsDate = new Date();
-}
-if(document.getElementById('duty-date')) {
-    document.getElementById('duty-date').valueAsDate = new Date();
-}
-
-// ------------------------------------------------------------------
-// 1. App Initialization
-// ------------------------------------------------------------------
 function initApp() {
-    console.log("Starting Firebase Listeners...");
-    
-    // 1.1 Listener for Patients
+    // 1. Patients Listener
     const qPatients = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
     onSnapshot(qPatients, (querySnapshot) => {
         allPatientsData = [];
@@ -112,7 +186,7 @@ function initApp() {
         renderPatients(allPatientsData);
     });
 
-    // 1.2 Listener for Schedules
+    // 2. Schedule Listener
     const qSchedule = query(collection(db, SCHEDULE_COLLECTION), orderBy("date"));
     onSnapshot(qSchedule, (snapshot) => {
         allDutiesData = [];
@@ -126,32 +200,20 @@ function initApp() {
     });
 }
 
-// ------------------------------------------------------------------
-// 2. Patient Logic (Sort & Filter & Export)
-// ------------------------------------------------------------------
 function renderPatients(data) {
     if(!patientList) return;
-    const keyword = searchInput.value.toLowerCase().trim();
-    const sortValue = sortSelect.value; // รับค่าจาก Dropdown
+    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const sortValue = sortSelect ? sortSelect.value : "ward";
 
-    // 2.1 Filter (Search)
     let filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
     });
 
-    // 2.2 Sorting Logic (Client-side)
     filteredData.sort((a, b) => {
-        if (sortValue === 'bed') {
-            // เรียงเตียงแบบตัวเลข (เช่น 2 มาก่อน 10)
-            return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
-        } else if (sortValue === 'date') {
-            // เรียงวันที่ (ใหม่ -> เก่า หรือ เก่า -> ใหม่ แล้วแต่ชอบ)
-            return new Date(a.date || 0) - new Date(b.date || 0);
-        } else {
-            // Default: เรียง Ward (String)
-            return (a.ward || '').localeCompare(b.ward || '');
-        }
+        if (sortValue === 'bed') return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
+        else if (sortValue === 'date') return new Date(a.date || 0) - new Date(b.date || 0);
+        else return (a.ward || '').localeCompare(b.ward || '');
     });
 
     patientList.innerHTML = '';
@@ -167,41 +229,21 @@ function renderPatients(data) {
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
 }
 
-// Event Listeners for Search & Sort
 if(searchInput) searchInput.addEventListener('input', () => renderPatients(allPatientsData));
 if(sortSelect) sortSelect.addEventListener('change', () => renderPatients(allPatientsData));
 
-// Export Excel Function
 if(exportBtn) {
     exportBtn.onclick = () => {
-        if (allPatientsData.length === 0) {
-            alert("ไม่มีข้อมูลให้ Export");
-            return;
-        }
-
-        // เตรียมข้อมูลสำหรับ Excel (เลือกเฉพาะฟิลด์ที่ต้องการ)
+        if (allPatientsData.length === 0) { alert("ไม่มีข้อมูลให้ Export"); return; }
         const exportData = allPatientsData.map(pt => ({
             Status: pt.status || 'Active',
-            Ward: pt.ward,
-            Bed: pt.bed,
-            Date: pt.date,
-            HN: pt.hn,
-            AN: pt.an,
-            Name: pt.name,
-            Age: pt.age,
-            Gender: pt.gender,
-            Diagnosis: pt.diag,
-            Owner: pt.owner,
-            Note: pt.note,
+            Ward: pt.ward, Bed: pt.bed, Date: pt.date, HN: pt.hn, AN: pt.an, Name: pt.name, Age: pt.age, Gender: pt.gender, Diagnosis: pt.diag, Owner: pt.owner, Note: pt.note,
             Created_At: pt.createdAt ? new Date(pt.createdAt.seconds * 1000).toLocaleString() : '-',
             Updated_At: pt.updatedAt ? new Date(pt.updatedAt.seconds * 1000).toLocaleString() : '-'
         }));
-
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
-        
-        // Save File
         XLSX.writeFile(workbook, "Sx_IPD_Patients.xlsx");
     }
 }
@@ -231,25 +273,17 @@ function createPatientRow(pt, isActive) {
     return row;
 }
 
-// ------------------------------------------------------------------
-// 3. Schedule Logic
-// ------------------------------------------------------------------
 function renderSchedule(duties) {
     if(!dutyList) return;
     dutyList.innerHTML = '';
-    if (duties.length === 0) {
-        dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>';
-        return;
-    }
+    if (duties.length === 0) { dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>'; return; }
 
     duties.forEach(duty => {
         const row = document.createElement('tr');
         let dateStr = duty.date;
         try {
             const dateObj = new Date(duty.date);
-            if (!isNaN(dateObj)) {
-                dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
-            }
+            if (!isNaN(dateObj)) dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
         } catch(e) {}
         
         const todayStr = new Date().toISOString().split('T')[0];
@@ -257,10 +291,7 @@ function renderSchedule(duties) {
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
         row.innerHTML = `
-            <td>
-                <strong>${dateStr}</strong> 
-                ${isToday ? '<span style="color:green; font-size:0.8em;">(Today)</span>' : ''}
-            </td>
+            <td><strong>${dateStr}</strong> ${isToday ? '<span style="color:green; font-size:0.8em;">(Today)</span>' : ''}</td>
             <td>${duty.ward || '-'}</td>
             <td>${duty.er || '-'}</td>
             <td>
@@ -274,7 +305,6 @@ function renderSchedule(duties) {
     });
 }
 
-// Edit Duty Logic
 window.editDuty = (id) => {
     const duty = allDutiesData.find(d => d.id === id);
     if(!duty) return;
@@ -292,45 +322,25 @@ if(dutyForm) {
             date: document.getElementById('duty-date').value,
             ward: document.getElementById('duty-ward').value,
             er: document.getElementById('duty-er').value,
-            timestamp: serverTimestamp() // บันทึกเวลาแก้ไข
+            timestamp: serverTimestamp()
         };
         try {
-            if (editingDutyId) {
-                await updateDoc(doc(db, SCHEDULE_COLLECTION, editingDutyId), dutyData);
-            } else {
-                await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
-            }
+            if (editingDutyId) await updateDoc(doc(db, SCHEDULE_COLLECTION, editingDutyId), dutyData);
+            else await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
             window.closeModal('duty-modal');
             dutyForm.reset();
             editingDutyId = null;
             document.getElementById('duty-date').valueAsDate = new Date();
-        } catch (error) {
-            alert("Error saving duty: " + error.message);
-        }
+        } catch (error) { alert("Error: " + error.message); }
     });
 }
 
-if(addDutyBtn) {
-    addDutyBtn.onclick = () => { 
-        dutyForm.reset(); 
-        editingDutyId = null;
-        document.getElementById('duty-date').valueAsDate = new Date();
-        dutyModal.style.display = 'block'; 
-    };
-}
-
-// Import Excel Logic
 if (importExcelBtn && excelInput) {
     importExcelBtn.onclick = () => excelInput.click();
-    
     excelInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
-
-        if(!confirm('⚠️ คำเตือน: การ Import จะ "ลบข้อมูลตารางเวรเก่าทั้งหมด" \nและแทนที่ด้วยข้อมูลจากไฟล์ Excel\n\nยืนยันหรือไม่?')) {
-            excelInput.value = '';
-            return;
-        }
+        if(!confirm('⚠️ คำเตือน: การ Import จะ "ลบข้อมูลตารางเวรเก่าทั้งหมด" \nยืนยันหรือไม่?')) { excelInput.value = ''; return; }
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -338,12 +348,10 @@ if (importExcelBtn && excelInput) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
                 const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { cellDates: true, defval: "" }); 
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { cellDates: true, defval: "" }); 
                 
                 const snapshot = await getDocs(collection(db, SCHEDULE_COLLECTION));
-                const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
-                await Promise.all(deletePromises);
+                await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
 
                 let count = 0;
                 for(const row of jsonData) {
@@ -351,143 +359,81 @@ if (importExcelBtn && excelInput) {
                     const dateKey = keys.find(k => k.trim().toLowerCase() === 'date');
                     const wardKey = keys.find(k => k.trim().toLowerCase() === 'ward');
                     const erKey = keys.find(k => k.trim().toLowerCase() === 'er');
-
                     if (!dateKey) continue;
 
                     let dateStr = "";
                     const rawDate = row[dateKey];
-
                     if (rawDate instanceof Date) {
-                        const year = rawDate.getFullYear();
-                        const month = String(rawDate.getMonth() + 1).padStart(2, '0');
-                        const day = String(rawDate.getDate()).padStart(2, '0');
-                        dateStr = `${year}-${month}-${day}`;
+                        dateStr = rawDate.toISOString().split('T')[0];
                     } else if (typeof rawDate === 'string') {
                         dateStr = rawDate.trim();
                     } else if (typeof rawDate === 'number') {
                          const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000);
-                         const year = jsDate.getFullYear();
-                         const month = String(jsDate.getMonth() + 1).padStart(2, '0');
-                         const day = String(jsDate.getDate()).padStart(2, '0');
-                         dateStr = `${year}-${month}-${day}`;
+                         dateStr = jsDate.toISOString().split('T')[0];
                     }
 
                     if (dateStr) {
                         await addDoc(collection(db, SCHEDULE_COLLECTION), {
-                            date: dateStr,
-                            ward: wardKey ? row[wardKey] : "",
-                            er: erKey ? row[erKey] : "",
-                            timestamp: serverTimestamp() // บันทึกเวลา Import
+                            date: dateStr, ward: wardKey ? row[wardKey] : "", er: erKey ? row[erKey] : "", timestamp: serverTimestamp()
                         });
                         count++;
                     }
                 }
-                
-                alert(`✅ ล้างข้อมูลเก่าและ Import ใหม่สำเร็จจำนวน ${count} วัน!`);
+                alert(`✅ Import สำเร็จ ${count} วัน!`);
                 excelInput.value = ''; 
-            } catch (error) {
-                console.error(error);
-                alert("เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: " + error.message);
-            }
+            } catch (error) { alert("Error: " + error.message); }
         };
         reader.readAsArrayBuffer(file);
     });
 }
 
-window.deleteDuty = async (docId) => {
-    if(confirm('ลบรายการเวรนี้?')) {
-        await deleteDoc(doc(db, SCHEDULE_COLLECTION, docId));
-    }
-}
-
-// ------------------------------------------------------------------
-// 4. Shared Actions
-// ------------------------------------------------------------------
+window.deleteDuty = async (docId) => { if(confirm('ลบ?')) await deleteDoc(doc(db, SCHEDULE_COLLECTION, docId)); }
 window.dischargeCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Discharged', dischargedAt: serverTimestamp(), updatedAt: serverTimestamp() });
 window.readmitCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Active', dischargedAt: null, updatedAt: serverTimestamp() });
-window.deleteCase = async (docId) => { if(confirm('⚠️ ยืนยันลบข้อมูลถาวร?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
-window.logout = () => { if(confirm('ต้องการออกจากระบบหรือไม่?')) { localStorage.removeItem('sx_ipd_is_logged_in'); location.reload(); } };
+window.deleteCase = async (docId) => { if(confirm('⚠️ ลบถาวร?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
 
 if(admitForm) {
     admitForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitBtn.innerText = "กำลังบันทึก...";
         submitBtn.disabled = true;
-
         const editDocId = document.getElementById('edit-doc-id').value;
         const patientData = {
-            ward: document.getElementById('ward').value || "", 
-            bed: document.getElementById('bed').value || "",
-            date: document.getElementById('admitDate').value || "",
-            hn: document.getElementById('hn').value || "",
-            an: document.getElementById('an').value || "",
-            name: document.getElementById('name').value || "",
-            age: document.getElementById('age').value || "",
-            gender: document.getElementById('gender').value || "",
-            diag: document.getElementById('diag').value || "",
-            owner: document.getElementById('owner').value || "",
-            note: document.getElementById('note').value || "",
-            status: editDocId ? undefined : "Active",
-            // บันทึกเวลา
-            updatedAt: serverTimestamp()
+            ward: document.getElementById('ward').value || "", bed: document.getElementById('bed').value || "", date: document.getElementById('admitDate').value || "",
+            hn: document.getElementById('hn').value || "", an: document.getElementById('an').value || "", name: document.getElementById('name').value || "",
+            age: document.getElementById('age').value || "", gender: document.getElementById('gender').value || "", diag: document.getElementById('diag').value || "",
+            owner: document.getElementById('owner').value || "", note: document.getElementById('note').value || "", status: editDocId ? undefined : "Active", updatedAt: serverTimestamp()
         };
-        
-        // ถ้าเป็นเคสใหม่ ให้เพิ่ม createdAt
-        if (!editDocId) {
-            patientData.createdAt = serverTimestamp();
-        }
-
+        if (!editDocId) patientData.createdAt = serverTimestamp();
         if(patientData.status === undefined) delete patientData.status;
 
         try {
             if (editDocId) await updateDoc(doc(db, COLLECTION_NAME, editDocId), patientData);
             else await addDoc(collection(db, COLLECTION_NAME), patientData);
             window.closeModal('modal');
-        } catch (error) {
-            alert("บันทึกไม่สำเร็จ: " + error.message);
-        } finally {
-            submitBtn.innerText = "บันทึกข้อมูล";
-            submitBtn.disabled = false;
-        }
+        } catch (error) { alert("Error: " + error.message); } 
+        finally { submitBtn.innerText = "บันทึกข้อมูล"; submitBtn.disabled = false; }
     });
 }
 
 window.openEditModal = (id) => {
     const pt = allPatientsData.find(p => p.id === id);
     if (!pt) return;
-    modalTitle.innerText = "แก้ไขข้อมูลผู้ป่วย (Edit)";
     document.getElementById('edit-doc-id').value = id;
-    document.getElementById('ward').value = pt.ward || "";
-    document.getElementById('bed').value = pt.bed || "";
-    document.getElementById('admitDate').value = pt.date || "";
-    document.getElementById('hn').value = pt.hn || "";
-    document.getElementById('an').value = pt.an || "";
-    document.getElementById('name').value = pt.name || "";
-    document.getElementById('age').value = pt.age || "";
-    document.getElementById('gender').value = pt.gender || "";
-    document.getElementById('diag').value = pt.diag || "";
-    document.getElementById('owner').value = pt.owner || "";
-    document.getElementById('note').value = pt.note || "";
+    document.getElementById('ward').value = pt.ward || ""; document.getElementById('bed').value = pt.bed || ""; document.getElementById('admitDate').value = pt.date || "";
+    document.getElementById('hn').value = pt.hn || ""; document.getElementById('an').value = pt.an || ""; document.getElementById('name').value = pt.name || "";
+    document.getElementById('age').value = pt.age || ""; document.getElementById('gender').value = pt.gender || ""; document.getElementById('diag').value = pt.diag || "";
+    document.getElementById('owner').value = pt.owner || ""; document.getElementById('note').value = pt.note || "";
+    document.getElementById('modal-title').innerText = "แก้ไขข้อมูลผู้ป่วย";
     modal.style.display = 'block';
 }
 
-if(addBtn) { 
-    addBtn.onclick = () => { 
-        admitForm.reset(); 
-        document.getElementById('edit-doc-id').value = ""; 
-        document.getElementById('admitDate').valueAsDate = new Date();
-        modalTitle.innerText = "รับเคสใหม่ (New Admission)";
-        modal.style.display = 'block'; 
-    };
-}
-if(addDutyBtn) addDutyBtn.onclick = () => { 
-    dutyForm.reset(); 
-    editingDutyId = null;
-    document.getElementById('duty-date').valueAsDate = new Date();
-    dutyModal.style.display = 'block'; 
-};
+if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "รับเคสใหม่"; modal.style.display = 'block'; };
+if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
+if(openCreateUserBtn) openCreateUserBtn.onclick = () => { document.getElementById('create-user-form').reset(); document.getElementById('create-user-msg').innerText = ""; document.getElementById('create-user-modal').style.display = 'block'; };
 
 window.onclick = (e) => {
     if (e.target == modal) window.closeModal('modal');
     if (e.target == dutyModal) window.closeModal('duty-modal');
+    if (e.target == document.getElementById('create-user-modal')) window.closeModal('create-user-modal');
 }
