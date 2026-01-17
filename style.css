@@ -265,6 +265,7 @@ th, td {
     text-align: left; 
     border-bottom: 1px solid #ddd; 
     vertical-align: middle; 
+    font-size: 14px;
 }
 th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
 
