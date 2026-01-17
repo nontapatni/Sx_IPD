@@ -20,7 +20,6 @@
             
             <form id="login-form">
                 <div class="form-group">
-                    <!-- ปรับ Placeholder ให้ชัดเจน -->
                     <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username ไม่ต้องมี @)" required>
                 </div>
                 <div class="form-group">
@@ -70,14 +69,18 @@
             <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
-                    <i class="fas fa-user-injured"></i> รายชื่อคนไข้ (Patient List)
+                    <i class="fas fa-procedures"></i> รวมทุกเคส (All Patients)
+                </button>
+                <!-- ✨ เพิ่ม Tab ใหม่ตรงนี้ -->
+                <button class="tab-btn" onclick="window.switchTab('mypatients')">
+                    <i class="fas fa-user-md"></i> คนไข้ของฉัน (My Patients)
                 </button>
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
                     <i class="fas fa-calendar-alt"></i> ตารางเวร (Duty Schedule)
                 </button>
             </div>
 
-            <!-- ================= PAGE 1: PATIENT LIST ================= -->
+            <!-- ================= PAGE 1: ALL PATIENTS LIST ================= -->
             <div id="patients-view">
                 <div class="controls-bar">
                     <button id="add-btn" class="btn btn-primary">
@@ -152,7 +155,34 @@
                 </div>
             </div>
 
-            <!-- ================= PAGE 2: DUTY SCHEDULE ================= -->
+            <!-- ================= PAGE 2: MY PATIENTS (NEW) ================= -->
+            <div id="mypatients-view" style="display: none;">
+                <div class="section-header" style="color: #2980b9;">
+                    <i class="fas fa-user-md"></i> คนไข้ที่ฉันดูแล (Active Cases Only)
+                </div>
+                <div class="card">
+                    <table id="mypatients-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Ward</th>
+                                <th style="width: 50px;">Bed</th>
+                                <th style="width: 90px;">Date</th>
+                                <th style="width: 100px;">HN / AN</th>
+                                <th>Patient Info</th>
+                                <th>Diagnosis</th>
+                                <th style="width: 100px;">Owner</th>
+                                <th>Note</th>
+                                <th style="width: 90px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mypatients-list">
+                            <tr><td colspan="9" style="text-align:center;">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 3: DUTY SCHEDULE ================= -->
             <div id="schedule-view" style="display: none;">
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">

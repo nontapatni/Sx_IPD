@@ -35,12 +35,15 @@ const loginForm = document.getElementById('login-form');
 const EMAIL_DOMAIN = "@ward.local"; 
 
 let currentUser = null;
+let currentUsername = ""; // เก็บชื่อ Username ไว้ใช้กรอง My Patients
 
 // --- AUTH STATE LISTENER ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        console.log("Logged in:", user.email);
+        // เก็บชื่อ Username (ตัด @ward.local)
+        currentUsername = user.email.replace(EMAIL_DOMAIN, '').toLowerCase(); 
+        console.log("Logged in:", currentUsername);
         
         // Check Admin
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
@@ -53,8 +56,7 @@ onAuthStateChanged(auth, (user) => {
         // ✅ แสดงชื่อผู้ใช้ (ตัด @ward.local ออก)
         const usernameDisplay = document.getElementById('user-info');
         if (usernameDisplay) {
-            const cleanUsername = user.email.replace(EMAIL_DOMAIN, '');
-            usernameDisplay.innerHTML = `<i class="fas fa-user-circle"></i> Log in as: ${cleanUsername}`;
+            usernameDisplay.innerHTML = `<i class="fas fa-user-circle"></i> Log in as: ${currentUsername}`;
         }
 
         authScreen.style.display = 'none';
@@ -62,6 +64,7 @@ onAuthStateChanged(auth, (user) => {
         initApp(); 
     } else {
         currentUser = null;
+        currentUsername = "";
         console.log("No user");
         authScreen.style.display = 'flex';
         appContainer.style.display = 'none';
@@ -176,16 +179,13 @@ function loadDropdownSettings() {
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
-            // Migration: ถ้าของเก่ามี staff/residents ให้รวมกันเป็น owners
             const combined = [...(data.staff || []), ...(data.residents || [])];
             data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
 
-        // Update Dropdowns
         updateSelectOptions('ward', data.wards);
-        updateSelectOptions('owner', data.owners); // ใช้ Owner รวม
+        updateSelectOptions('owner', data.owners);
 
-        // Update Settings Form
         if(document.getElementById('settings-wards')) 
             document.getElementById('settings-wards').value = (data.wards || []).join('\n');
         
@@ -237,6 +237,7 @@ if (openSettingsBtn) {
 // --- APP LOGIC ---
 const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
+const myPatientsList = document.getElementById('mypatients-list'); // Table List
 const dutyList = document.getElementById('duty-list');
 
 const addBtn = document.getElementById('add-btn');
@@ -264,15 +265,21 @@ let editingDutyId = null;
 if(document.getElementById('admitDate')) document.getElementById('admitDate').valueAsDate = new Date();
 if(document.getElementById('duty-date')) document.getElementById('duty-date').valueAsDate = new Date();
 
-// Tabs
+// Tabs Logic
 window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
     document.getElementById('patients-view').style.display = 'none';
+    document.getElementById('mypatients-view').style.display = 'none';
     document.getElementById('schedule-view').style.display = 'none';
 
     if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
+    else if (tabName === 'mypatients') {
+        document.getElementById('mypatients-view').style.display = 'block';
+        // เรียก Render My Patients เมื่อกด Tab
+        renderMyPatients(allPatientsData);
+    }
     else if (tabName === 'schedule') document.getElementById('schedule-view').style.display = 'block';
 }
 
@@ -280,7 +287,6 @@ window.closeModal = (modalId) => document.getElementById(modalId).style.display 
 window.openChangePasswordModal = () => document.getElementById('change-password-modal').style.display = 'block';
 
 function initApp() {
-    // Load Settings
     loadDropdownSettings();
 
     // 1. Patients Listener
@@ -291,6 +297,7 @@ function initApp() {
             allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
         });
         renderPatients(allPatientsData);
+        renderMyPatients(allPatientsData); // อัปเดต My Patients ด้วย
     });
 
     // 2. Schedule Listener
@@ -307,7 +314,7 @@ function initApp() {
     });
 }
 
-// --- RENDERING FUNCTIONS ---
+// --- RENDER ALL PATIENTS ---
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
@@ -335,6 +342,33 @@ function renderPatients(data) {
 
     if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>';
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
+}
+
+// --- RENDER MY PATIENTS (NEW) ---
+function renderMyPatients(data) {
+    if(!myPatientsList) return;
+    myPatientsList.innerHTML = '';
+
+    // กรองเฉพาะ:
+    // 1. ยังไม่ Discharge
+    // 2. ชื่อ Owner มีคำว่า currentUsername อยู่ (เช่น "R4 Somjai" มี "somjai")
+    const myCases = data.filter(pt => {
+        if (pt.status === 'Discharged') return false;
+        
+        // Clean strings for comparison
+        const ownerName = (pt.owner || "").toLowerCase();
+        const myName = currentUsername.toLowerCase();
+        
+        return ownerName.includes(myName);
+    });
+
+    if (myCases.length === 0) {
+        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่มีเคสที่คุณดูแลอยู่ (${currentUsername})</td></tr>`;
+    } else {
+        myCases.forEach(pt => {
+            myPatientsList.appendChild(createPatientRow(pt, true));
+        });
+    }
 }
 
 if(searchInput) searchInput.addEventListener('input', () => renderPatients(allPatientsData));
