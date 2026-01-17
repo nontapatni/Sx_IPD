@@ -38,26 +38,29 @@
             <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p></p>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
+                <!-- ปรับ Layout ขวาบน: แยก User info กับปุ่มเป็นคนละบรรทัด -->
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600;"></div>
 
-                    <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-cog"></i> Settings
-                    </button>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                        <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
 
-                    <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-user-plus"></i> Add user
-                    </button>
+                        <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-user-plus"></i> Add user
+                        </button>
 
-                    <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-key"></i> Change password
-                    </button>
-                    <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
+                        <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-key"></i> Change password
+                        </button>
+                        <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -65,14 +68,14 @@
             <div id="summary-section" style="margin-bottom: 20px;">
                 <div class="card" style="background: #fdfefe; border-left: 4px solid #27ae60;">
                     <div style="padding-bottom: 10px; font-weight: bold; color: #555; border-bottom: 1px solid #eee; margin-bottom: 10px;">
-                        <i class="fas fa-chart-bar"></i> Summary stat
+                        <i class="fas fa-chart-bar"></i> สรุปยอดคนไข้ (Active Cases by Owner)
                     </div>
                     <table id="summary-table">
                         <thead>
                             <tr style="background-color: transparent;">
                                 <th>Owner Name</th>
-                                <th style="width: 150px; text-align: center; color: #27ae60;">Active Cases</th>
-                                <th style="width: 150px; text-align: center; color: #7f8c8d;">Total Cases</th>
+                                <th style="text-align: center; color: #27ae60;">Active Cases</th>
+                                <th style="text-align: center; color: #7f8c8d;">Total Cases</th>
                             </tr>
                         </thead>
                         <tbody id="summary-list">
@@ -84,12 +87,19 @@
 
             <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
+                <!-- 1. All Patients (Active) -->
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> All Patients
                 </button>
+                <!-- 2. My Patients -->
                 <button id="tab-mypatients" class="tab-btn" onclick="window.switchTab('mypatients')">
                     <i class="fas fa-user-md"></i> My Patients
                 </button>
+                <!-- 3. Summary (ย้ายมาตรงนี้) -->
+                <button class="tab-btn" onclick="window.switchTab('summary')">
+                    <i class="fas fa-chart-pie"></i> Summary
+                </button>
+                <!-- 4. Schedule -->
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
                     <i class="fas fa-calendar-alt"></i> ตารางเวร
                 </button>
@@ -106,11 +116,9 @@
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
-                                <option value="ward_bed">Sort by Ward → Bed</option>
+                                <option value="ward">Sort by Ward</option>
                                 <option value="bed">Sort by Bed</option>
-                                <option value="date_new">Admit Date (ใหม่ → เก่า)</option>
-                                <option value="date_old">Admit Date (เก่า → ใหม่)</option>
-                                <option value="owner_ward">Sort by Owner → Ward</option>
+                                <option value="date">Sort by Date of Admission</option>
                             </select>
                         </div>
 
@@ -250,7 +258,27 @@
                 </div>
             </div>
 
-            <!-- ================= PAGE 3: DUTY SCHEDULE ================= -->
+            <!-- ================= PAGE 3: SUMMARY DASHBOARD (Moved Here) ================= -->
+            <div id="summary-view" style="display: none;">
+                <div class="section-header"><i class="fas fa-chart-bar"></i> Case Statistics by Owner</div>
+                
+                <div class="card">
+                    <table id="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Owner Name</th>
+                                <th style="width: 150px; text-align: center; color: #27ae60;">Active Cases</th>
+                                <th style="width: 150px; text-align: center; color: #7f8c8d;">Total Cases (All time)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-list">
+                            <tr><td colspan="3" style="text-align:center;">Calculating stats...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 4: DUTY SCHEDULE ================= -->
             <div id="schedule-view" style="display: none;">
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">
