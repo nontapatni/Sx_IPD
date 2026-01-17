@@ -379,7 +379,7 @@ function renderMyPatients(data) {
         if (myDischargedCases.length === 0) {
             myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>`;
         } else {
-            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false))); // ส่ง false เพื่อบอกว่าเป็น discharged table (มีปุ่ม return)
+            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
         }
     }
 }
@@ -409,10 +409,18 @@ function createPatientRow(pt, isActive) {
         <button class="btn-sm btn-dc" onclick="window.dischargeCase('${pt.id}')">D/C</button>
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     ` : `
-        <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')"><i class="fas fa-edit"></i></button> <!-- เพิ่มปุ่ม Edit ใน History -->
+        <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')"><i class="fas fa-edit"></i></button>
         <button class="btn-sm" style="background-color: #3498db;" onclick="window.readmitCase('${pt.id}')"><i class="fas fa-undo"></i></button>
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     `;
+
+    // Highlight Owner Name (New Logic)
+    let displayOwner = pt.owner || '-';
+    // เช็คว่ามี Username และชื่อ Owner มีส่วนที่ตรงกันหรือไม่
+    if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
+         const highlightStyle = "font-weight: bold; color: #2980b9; background-color: #d6eaf8; padding: 2px 6px; border-radius: 4px; display: inline-block;";
+         displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
+    }
 
     row.innerHTML = `
         <td><strong>${pt.ward || '-'}</strong></td>
@@ -421,7 +429,7 @@ function createPatientRow(pt, isActive) {
         <td><div><strong>HN:</strong> ${pt.hn || '-'}</div><div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div></td>
         <td><div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div><div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div></td>
         <td>${pt.diag || '-'}</td>
-        <td>${pt.owner || '-'}</td>
+        <td>${displayOwner}</td>
         <td class="text-orange">${pt.note || '-'}</td>
         <td><div class="action-buttons">${actionButtons}</div></td>
     `;
@@ -445,7 +453,7 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
-        // Highlight Own Name
+        // Highlight Own Name in Schedule
         const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
         let displayWard = duty.ward || '-';
         let displayEr = duty.er || '-';
