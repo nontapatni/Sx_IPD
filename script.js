@@ -45,7 +45,7 @@ onAuthStateChanged(auth, (user) => {
         // Check Admin
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
         const addUserBtn = document.getElementById('open-create-user-btn');
-        const settingsBtn = document.getElementById('open-settings-btn'); // ปุ่มตั้งค่า
+        const settingsBtn = document.getElementById('open-settings-btn');
         
         if(addUserBtn) addUserBtn.style.display = isAdmin ? 'flex' : 'none';
         if(settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none';
@@ -78,7 +78,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
-// CREATE USER LOGIC
+// CREATE USER (ADMIN ONLY)
 const createUserForm = document.getElementById('create-user-form');
 const createUserMsg = document.getElementById('create-user-msg');
 
@@ -151,44 +151,46 @@ function getErrorMessage(code) {
     }
 }
 
-// --- SETTINGS LOGIC (NEW) ---
+// --- SETTINGS LOGIC ---
 const openSettingsBtn = document.getElementById('open-settings-btn');
 const settingsForm = document.getElementById('settings-form');
 
-// ฟังก์ชันโหลดข้อมูล Dropdown จาก Firebase
 function loadDropdownSettings() {
     const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
     
     onSnapshot(docRef, (docSnap) => {
         let data = docSnap.data();
         
-        // ถ้ายังไม่มีข้อมูลใน DB ให้ใช้ค่า Default
+        // Default Data
         if (!docSnap.exists()) {
             data = {
                 wards: ["Sx ชาย", "Sx หญิง", "Burn Unit", "SICU", "Trauma", "Private"],
-                staff: ["อ.สมศักดิ์", "อ.วิชัย", "อ.ปราณี"],
-                residents: ["R4 Somjai", "R3 Somsri", "R2 Sompong", "R1 Nontapat"]
+                owners: ["อ.สมศักดิ์", "อ.วิชัย", "อ.ปราณี", "R4 Somjai", "R3 Somsri", "R2 Sompong", "R1 Nontapat"]
             };
-            // บันทึกค่า Default ลง DB ครั้งแรก
             setDoc(docRef, data); 
+        } else if (!data.owners) {
+            // Migration: ถ้าของเก่ามี staff/residents ให้รวมกันเป็น owners
+            const combined = [...(data.staff || []), ...(data.residents || [])];
+            data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
 
-        // อัปเดต UI (Dropdowns)
+        // Update Dropdowns
         updateSelectOptions('ward', data.wards);
-        updateOwnerOptions(data.staff, data.residents);
+        updateSelectOptions('owner', data.owners); // ใช้ Owner รวม
 
-        // อัปเดตในฟอร์ม Settings (ถ้าเปิดอยู่)
-        document.getElementById('settings-wards').value = data.wards.join('\n');
-        document.getElementById('settings-staff').value = data.staff.join('\n');
-        document.getElementById('settings-residents').value = data.residents.join('\n');
+        // Update Settings Form
+        if(document.getElementById('settings-wards')) 
+            document.getElementById('settings-wards').value = (data.wards || []).join('\n');
+        
+        if(document.getElementById('settings-owners')) 
+            document.getElementById('settings-owners').value = (data.owners || []).join('\n');
     });
 }
 
-// ฟังก์ชันช่วยเติม Option ใน Select
 function updateSelectOptions(selectId, items) {
     const select = document.getElementById(selectId);
-    if(!select) return;
-    const currentVal = select.value; // เก็บค่าที่เลือกอยู่เดิม
+    if(!select || !items) return;
+    const currentVal = select.value;
     select.innerHTML = `<option value="">- เลือก ${selectId} -</option>`;
     
     items.forEach(item => {
@@ -201,46 +203,15 @@ function updateSelectOptions(selectId, items) {
     if (items.includes(currentVal)) select.value = currentVal;
 }
 
-// ฟังก์ชันช่วยเติม Owner (แบบมี Optgroup)
-function updateOwnerOptions(staffList, resList) {
-    const select = document.getElementById('owner');
-    if(!select) return;
-    const currentVal = select.value;
-    select.innerHTML = `<option value="">-- เลือก Staff/Resident --</option>`;
-
-    // Group 1: Staff
-    itemsToOptGroup(select, "Staff (อาจารย์)", staffList);
-    // Group 2: Resident
-    itemsToOptGroup(select, "Resident Team", resList);
-
-    // เช็คว่าค่าเดิมยังอยู่ไหม ถ้าอยู่ก็เลือกคืนไป
-    const allOptions = Array.from(select.options).map(o => o.value);
-    if(allOptions.includes(currentVal)) select.value = currentVal;
-}
-
-function itemsToOptGroup(selectElem, label, items) {
-    const group = document.createElement('optgroup');
-    group.label = label;
-    items.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        group.appendChild(option);
-    });
-    selectElem.appendChild(group);
-}
-
-// บันทึกการตั้งค่า
 if (settingsForm) {
     settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const wards = document.getElementById('settings-wards').value.split('\n').map(s => s.trim()).filter(s => s);
-        const staff = document.getElementById('settings-staff').value.split('\n').map(s => s.trim()).filter(s => s);
-        const residents = document.getElementById('settings-residents').value.split('\n').map(s => s.trim()).filter(s => s);
+        const owners = document.getElementById('settings-owners').value.split('\n').map(s => s.trim()).filter(s => s);
 
         try {
             await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), {
-                wards, staff, residents, updatedAt: serverTimestamp()
+                wards, owners, updatedAt: serverTimestamp()
             });
             alert("บันทึกการตั้งค่าเรียบร้อย!");
             window.closeModal('settings-modal');
@@ -302,9 +273,7 @@ window.closeModal = (modalId) => document.getElementById(modalId).style.display 
 window.openChangePasswordModal = () => document.getElementById('change-password-modal').style.display = 'block';
 
 function initApp() {
-    console.log("App Initializing...");
-    
-    // โหลดการตั้งค่า Dropdown
+    // Load Settings
     loadDropdownSettings();
 
     // 1. Patients Listener
@@ -331,7 +300,7 @@ function initApp() {
     });
 }
 
-// --- RENDERING FUNCTIONS (เหมือนเดิม) ---
+// --- RENDERING FUNCTIONS ---
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
@@ -558,19 +527,10 @@ window.openEditModal = (id) => {
     const pt = allPatientsData.find(p => p.id === id);
     if (!pt) return;
     document.getElementById('edit-doc-id').value = id;
-    // รอ Dropdown โหลดเสร็จก่อนค่อย set value
-    // (เทคนิค: ดึงค่าจาก Database ใหม่เพื่อให้แน่ใจว่า Option มีอยู่)
-    document.getElementById('ward').value = pt.ward || ""; 
-    document.getElementById('bed').value = pt.bed || ""; 
-    document.getElementById('admitDate').value = pt.date || "";
-    document.getElementById('hn').value = pt.hn || ""; 
-    document.getElementById('an').value = pt.an || ""; 
-    document.getElementById('name').value = pt.name || "";
-    document.getElementById('age').value = pt.age || ""; 
-    document.getElementById('gender').value = pt.gender || ""; 
-    document.getElementById('diag').value = pt.diag || "";
-    document.getElementById('owner').value = pt.owner || ""; 
-    document.getElementById('note').value = pt.note || "";
+    document.getElementById('ward').value = pt.ward || ""; document.getElementById('bed').value = pt.bed || ""; document.getElementById('admitDate').value = pt.date || "";
+    document.getElementById('hn').value = pt.hn || ""; document.getElementById('an').value = pt.an || ""; document.getElementById('name').value = pt.name || "";
+    document.getElementById('age').value = pt.age || ""; document.getElementById('gender').value = pt.gender || ""; document.getElementById('diag').value = pt.diag || "";
+    document.getElementById('owner').value = pt.owner || ""; document.getElementById('note').value = pt.note || "";
     document.getElementById('modal-title').innerText = "แก้ไขข้อมูลผู้ป่วย";
     modal.style.display = 'block';
 }

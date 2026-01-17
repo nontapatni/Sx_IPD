@@ -249,7 +249,7 @@
                     <label>Owner</label>
                     <!-- ตัวเลือกจะถูกโหลดจาก Firebase -->
                     <select id="owner">
-                        <option value="" selected>-- เลือก Staff/Resident --</option>
+                        <option value="" selected>-- เลือก Owner --</option>
                     </select>
                 </div>
 
@@ -321,7 +321,7 @@
         </div>
     </div>
 
-    <!-- Modal 5: Settings (Admin Only) - NEW -->
+    <!-- Modal 5: Settings (Admin Only) -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('settings-modal')">&times;</span>
@@ -333,13 +333,10 @@
                     <label>รายชื่อ Wards</label>
                     <textarea id="settings-wards" rows="5" placeholder="Sx ชาย\nSx หญิง..."></textarea>
                 </div>
+                <!-- รวมเป็นช่องเดียว -->
                 <div class="form-group">
-                    <label>รายชื่อ Staff (อาจารย์)</label>
-                    <textarea id="settings-staff" rows="4" placeholder="อ.สมศักดิ์\nอ.วิชัย..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>รายชื่อ Residents (แพทย์ประจำบ้าน)</label>
-                    <textarea id="settings-residents" rows="4" placeholder="R4 Somjai\nR3 Somsri..."></textarea>
+                    <label>รายชื่อ Owner (แพทย์เจ้าของไข้)</label>
+                    <textarea id="settings-owners" rows="8" placeholder="อ.สมศักดิ์\nR4 Somjai..."></textarea>
                 </div>
                 <button type="submit" class="btn btn-submit" style="background-color: #34495e;">บันทึกการตั้งค่า</button>
             </form>
