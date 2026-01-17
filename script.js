@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+// เพิ่ม getDocs เข้ามาใน import เพื่อใช้ดึงข้อมูลมาลบ
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyClYDNeWk_yEm0WWe65qm4F7iBGStE6-KI",
@@ -77,6 +78,8 @@ const importExcelBtn = document.getElementById('import-excel-btn');
 const excelInput = document.getElementById('excel-file');
 
 let allPatientsData = [];
+let allDutiesData = []; // เก็บข้อมูลเวรทั้งหมดไว้ Global เพื่อใช้ตอน Edit
+let editingDutyId = null; // ตัวแปรเก็บสถานะว่ากำลังแก้ไขเวรไหนอยู่
 
 // Check Auto Login
 if (localStorage.getItem('sx_ipd_is_logged_in') === 'true') {
@@ -111,8 +114,13 @@ function initApp() {
     // 1.2 Listener for Schedules
     const qSchedule = query(collection(db, SCHEDULE_COLLECTION), orderBy("date"));
     onSnapshot(qSchedule, (snapshot) => {
+        allDutiesData = []; // Reset ข้อมูล Global
         const duties = [];
-        snapshot.forEach(doc => duties.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => {
+            const d = { id: doc.id, ...doc.data() };
+            duties.push(d);
+            allDutiesData.push(d); // เก็บลง Global
+        });
         renderSchedule(duties);
     });
 }
@@ -169,7 +177,7 @@ function createPatientRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 3. Schedule Logic (Improved Import)
+// 3. Schedule Logic (Improved Import & Edit)
 // ------------------------------------------------------------------
 function renderSchedule(duties) {
     if(!dutyList) return;
@@ -194,6 +202,7 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
+        // เพิ่มปุ่ม Edit (สีส้ม) ข้างๆ ปุ่ม Delete
         row.innerHTML = `
             <td>
                 <strong>${dateStr}</strong> 
@@ -202,14 +211,31 @@ function renderSchedule(duties) {
             <td>${duty.ward || '-'}</td>
             <td>${duty.er || '-'}</td>
             <td>
-                <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')"><i class="fas fa-trash"></i></button>
+                <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')" style="display:inline-block; margin-right:5px;"><i class="fas fa-edit"></i></button>
+                <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')" style="display:inline-block;"><i class="fas fa-trash"></i></button>
             </td>
         `;
         dutyList.appendChild(row);
     });
 }
 
-// Add Duty
+// ฟังก์ชันเปิด Modal แก้ไขเวร
+window.editDuty = (id) => {
+    const duty = allDutiesData.find(d => d.id === id);
+    if(!duty) return;
+
+    editingDutyId = id; // ระบุว่ากำลัง Edit
+    
+    // เติมข้อมูลลงฟอร์ม
+    document.getElementById('duty-date').value = duty.date;
+    document.getElementById('duty-ward').value = duty.ward;
+    document.getElementById('duty-er').value = duty.er;
+
+    // เปิด Modal
+    if(dutyModal) dutyModal.style.display = 'block';
+}
+
+// Add/Update Duty Submit Handler
 if(dutyForm) {
     dutyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -220,23 +246,46 @@ if(dutyForm) {
             timestamp: serverTimestamp()
         };
         try {
-            await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
+            if (editingDutyId) {
+                // กรณีแก้ไข (Update)
+                await updateDoc(doc(db, SCHEDULE_COLLECTION, editingDutyId), dutyData);
+            } else {
+                // กรณีเพิ่มใหม่ (Add)
+                await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
+            }
             window.closeModal('duty-modal');
             dutyForm.reset();
+            editingDutyId = null; // Reset สถานะ
             document.getElementById('duty-date').valueAsDate = new Date();
         } catch (error) {
-            alert("Error adding duty: " + error.message);
+            alert("Error saving duty: " + error.message);
         }
     });
 }
 
-// ✅ Improved Import Excel Logic
+// ปุ่ม Add Duty ปกติ (ต้อง Reset สถานะ Edit ออก)
+if(addDutyBtn) {
+    addDutyBtn.onclick = () => { 
+        dutyForm.reset(); 
+        editingDutyId = null; // เป็นโหมดเพิ่มใหม่
+        document.getElementById('duty-date').valueAsDate = new Date();
+        dutyModal.style.display = 'block'; 
+    };
+}
+
+// ✅ Improved Import Excel Logic (Clear Old Data Logic Added)
 if (importExcelBtn && excelInput) {
     importExcelBtn.onclick = () => excelInput.click();
     
     excelInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
+
+        // ยืนยันการลบข้อมูลเก่า
+        if(!confirm('⚠️ คำเตือน: การ Import จะ "ลบข้อมูลตารางเวรเก่าทั้งหมด" \nและแทนที่ด้วยข้อมูลจากไฟล์ Excel\n\nยืนยันหรือไม่?')) {
+            excelInput.value = ''; // ยกเลิกแล้วล้าง input
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -246,41 +295,41 @@ if (importExcelBtn && excelInput) {
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // อ่านข้อมูลดิบ
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, {
                     cellDates: true, 
                     defval: "" 
                 }); 
                 
-                console.log("Raw Excel Data:", jsonData); // ดูใน Console ได้เลยว่าอ่านอะไรมาบ้าง
+                // --- STEP 1: ลบข้อมูลเก่าทั้งหมด (Clear Collection) ---
+                console.log("Clearing old schedule...");
+                const snapshot = await getDocs(collection(db, SCHEDULE_COLLECTION));
+                // สร้าง Promise array เพื่อลบทุก doc พร้อมกัน (หรือทีละตัว)
+                const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+                await Promise.all(deletePromises);
+                console.log("Old schedule cleared.");
 
+                // --- STEP 2: เพิ่มข้อมูลใหม่ ---
                 let count = 0;
                 for(const row of jsonData) {
-                    // 1. Normalization: หา Key ที่ถูกต้องแบบไม่สนตัวพิมพ์เล็กใหญ่
                     const keys = Object.keys(row);
                     const dateKey = keys.find(k => k.trim().toLowerCase() === 'date');
                     const wardKey = keys.find(k => k.trim().toLowerCase() === 'ward');
                     const erKey = keys.find(k => k.trim().toLowerCase() === 'er');
 
-                    // ถ้าไม่มีคอลัมน์ Date ข้ามเลย
                     if (!dateKey) continue;
 
                     let dateStr = "";
                     const rawDate = row[dateKey];
 
-                    // 2. Date Parsing: จัดการวันที่ให้ฉลาดขึ้น
                     if (rawDate instanceof Date) {
-                        // ป้องกันเรื่อง Timezone ทำให้วันที่เลื่อน (ใช้ local time -> string)
                         const year = rawDate.getFullYear();
                         const month = String(rawDate.getMonth() + 1).padStart(2, '0');
                         const day = String(rawDate.getDate()).padStart(2, '0');
                         dateStr = `${year}-${month}-${day}`;
                     } else if (typeof rawDate === 'string') {
-                        // ถ้าเป็น Text พยายามตัดเอาแค่ YYYY-MM-DD
                         dateStr = rawDate.trim();
                     } else if (typeof rawDate === 'number') {
-                        // กรณี Excel Serial Number
-                         const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000); // แปลง Serial เป็น JS Date
+                         const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000);
                          const year = jsDate.getFullYear();
                          const month = String(jsDate.getMonth() + 1).padStart(2, '0');
                          const day = String(jsDate.getDate()).padStart(2, '0');
@@ -298,12 +347,7 @@ if (importExcelBtn && excelInput) {
                     }
                 }
                 
-                if (count > 0) {
-                    alert(`✅ Import สำเร็จจำนวน ${count} วัน!`);
-                } else {
-                    alert(`⚠️ ไม่พบข้อมูลที่นำเข้าได้ (0 วัน)\nตรวจสอบหัวตารางให้เป็น Date, Ward, ER`);
-                }
-                
+                alert(`✅ ล้างข้อมูลเก่าและ Import ใหม่สำเร็จจำนวน ${count} วัน!`);
                 excelInput.value = ''; 
             } catch (error) {
                 console.error(error);
@@ -394,7 +438,12 @@ if(addBtn) {
         modal.style.display = 'block'; 
     };
 }
-if(addDutyBtn) addDutyBtn.onclick = () => { dutyModal.style.display = 'block'; };
+if(addDutyBtn) addDutyBtn.onclick = () => { 
+    dutyForm.reset(); 
+    editingDutyId = null;
+    document.getElementById('duty-date').valueAsDate = new Date();
+    dutyModal.style.display = 'block'; 
+};
 
 window.onclick = (e) => {
     if (e.target == modal) window.closeModal('modal');
