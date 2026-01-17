@@ -46,6 +46,7 @@
                     <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
                     </button>
+                    <!-- ปุ่ม Logout -->
                     <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -59,10 +60,6 @@
                 </button>
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
                     <i class="fas fa-calendar-alt"></i> ตารางเวร (Duty Schedule)
-                </button>
-                <!-- Tab สำหรับ Admin -->
-                <button id="tab-users" class="tab-btn" style="display:none;" onclick="window.switchTab('users')">
-                    <i class="fas fa-users-cog"></i> จัดการผู้ใช้ (Users)
                 </button>
             </div>
 
@@ -170,35 +167,6 @@
                             <tr><td colspan="4" style="text-align:center;">Loading schedule...</td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- ================= PAGE 3: MANAGE USERS (ADMIN) ================= -->
-            <div id="manage-users-view" style="display: none;">
-                <div class="controls-bar">
-                    <button id="open-create-user-btn" class="btn btn-primary" style="background-color: #8e44ad;">
-                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ (Add Staff)
-                    </button>
-                </div>
-
-                <div class="section-header"><i class="fas fa-users-cog"></i> รายชื่อผู้ใช้งาน (User List)</div>
-                <div class="card">
-                    <table id="users-table">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Created At</th>
-                                <th style="width: 150px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-list">
-                            <tr><td colspan="4" style="text-align:center;">Loading users...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
-                    * หมายเหตุ: หากต้องการเปลี่ยนรหัสผ่านให้ User อื่น ให้ทำการ <strong>"ลบ"</strong> และ <strong>"สร้างใหม่"</strong>
                 </div>
             </div>
 
@@ -313,29 +281,7 @@
         </div>
     </div>
 
-    <!-- Modal 3: Create User -->
-    <div id="create-user-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="window.closeModal('create-user-modal')">&times;</span>
-            <h2 style="color: #8e44ad;"><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ใหม่ (Add Staff)</h2>
-            <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">กำหนด Username และ Password ให้เจ้าหน้าที่</p>
-            
-            <form id="create-user-form">
-                <div class="form-group">
-                    <label>Username (ชื่อผู้ใช้)</label>
-                    <input type="text" id="new-username" placeholder="เช่น somchai, nurse1" required pattern="[a-zA-Z0-9_]+" title="ภาษาอังกฤษ ตัวเลข หรือ _ เท่านั้น">
-                </div>
-                <div class="form-group">
-                    <label>Password (รหัสผ่าน)</label>
-                    <input type="text" id="new-password" placeholder="อย่างน้อย 6 ตัวอักษร" required minlength="6">
-                </div>
-                <button type="submit" class="btn btn-submit" style="background-color: #8e44ad;">สร้างบัญชี</button>
-                <div id="create-user-msg" style="margin-top:10px; font-size:0.9em;"></div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal 4: Change Password (Self) -->
+    <!-- Modal 3: Change Password (Self) -->
     <div id="change-password-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('change-password-modal')">&times;</span>

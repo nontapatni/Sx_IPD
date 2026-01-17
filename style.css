@@ -42,8 +42,8 @@ body {
     color: white;
 }
 
-/* --- LOGIN SCREEN --- */
-#login-screen {
+/* --- AUTH SCREEN (แก้ไขชื่อ ID ให้ตรงกับ HTML) --- */
+#auth-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -73,7 +73,7 @@ body {
 .login-input {
     width: 100%;
     padding: 12px 15px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 16px;
@@ -167,15 +167,10 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
 .btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
 
 /* Table Actions */
-.action-buttons { 
-    display: flex; 
-    gap: 4px; 
-    flex-wrap: nowrap; 
-    align-items: center;
-}
+.action-buttons { display: flex; gap: 5px; }
 .btn-sm {
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 5px 10px;
+    font-size: 13px;
     border-radius: 4px;
     color: white;
     cursor: pointer;
@@ -183,7 +178,6 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     display: flex;
     align-items: center;
     gap: 3px;
-    white-space: nowrap;
 }
 .btn-edit { background-color: #f39c12; }
 .btn-dc { background-color: #27ae60; }
@@ -208,12 +202,7 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     font-weight: 600;
 }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
-th, td { 
-    padding: 8px 10px; 
-    text-align: left; 
-    border-bottom: 1px solid #ddd; 
-    vertical-align: middle; 
-}
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
 th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
 
 /* Modal */
