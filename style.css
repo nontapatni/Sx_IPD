@@ -3,7 +3,7 @@ body {
     font-family: 'Sarabun', sans-serif;
     background-color: #f4f6f8;
     margin: 0;
-    padding: 20px;
+    padding: 15px; /* ลด padding เล็กน้อยเพื่อพื้นที่มือถือ */
     color: #333;
 }
 
@@ -13,32 +13,43 @@ body {
 }
 
 header { margin-bottom: 20px; }
-h1 { color: #2c3e50; margin-bottom: 5px; }
+h1 { color: #2c3e50; margin-bottom: 5px; font-size: 1.5em; }
 
-/* Control Bar & Search */
-.controls-bar {
+/* --- Controls Wrapper (จัดแนว Search/Sort) --- */
+.controls-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     flex-wrap: wrap;
     gap: 10px;
 }
 
-.search-box {
-    position: relative;
-    width: 300px;
+.controls-right {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
 }
 
+/* Search Box */
+.search-box {
+    position: relative;
+    min-width: 200px;
+}
 .search-box input {
     width: 100%;
-    padding: 10px 10px 10px 35px; /* เว้นที่ให้ไอคอน */
+    padding: 8px 10px 8px 35px;
     border: 1px solid #ccc;
     border-radius: 20px;
     outline: none;
     font-family: 'Sarabun', sans-serif;
 }
-
 .search-icon {
     position: absolute;
     left: 12px;
@@ -47,65 +58,197 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     color: #888;
 }
 
+/* Sort Box */
+.sort-box {
+    position: relative;
+}
+.sort-box select {
+    padding: 8px 10px 8px 30px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    outline: none;
+    font-family: 'Sarabun', sans-serif;
+    appearance: none; /* ลบลูกศรเดิม */
+    background-color: white;
+    cursor: pointer;
+}
+.sort-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    pointer-events: none;
+}
+
 /* ปุ่ม */
 .btn {
-    padding: 10px 20px;
+    padding: 8px 20px;
     border: none;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
     font-family: 'Sarabun', sans-serif;
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
 }
 
 .btn-primary { background-color: #3498db; color: white; }
-.btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
+.btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; border-radius: 5px; padding: 10px;}
 
-
-/* Action Buttons in Table */
+/* Action Buttons */
 .action-buttons {
     display: flex;
     gap: 5px;
 }
-
 .btn-sm {
-    padding: 5px 10px;
+    padding: 6px 10px;
     font-size: 13px;
-    border-radius: 4px;
+    border-radius: 6px;
     color: white;
     cursor: pointer;
     border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .btn-edit { background-color: #f39c12; }
-.btn-dc { background-color: #27ae60; } /* ปุ่ม D/C สีเขียว */
+.btn-dc { background-color: #27ae60; }
 .btn-delete { background-color: #e74c3c; }
 
-/* การ์ดและตาราง */
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    overflow-x: auto;
-    margin-bottom: 30px; /* เว้นระยะห่างระหว่างตาราง */
-}
-
-/* หัวข้อแบ่งส่วน Active / Discharged */
+/* Section Header */
 .section-header {
-    margin-top: 30px;
+    margin-top: 25px;
     margin-bottom: 10px;
     padding-bottom: 5px;
-    border-bottom: 2px solid #ddd;
+    border-bottom: 2px solid #e0e0e0;
     color: #555;
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: 600;
 }
 
-table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
-th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
+/* Card & Table Basic */
+.card {
+    background: white;
+    padding: 0; /* เอา padding ออกเพื่อให้ตารางชิดขอบในการ์ด */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden; /* ซ่อนมุมเกิน */
+    margin-bottom: 20px;
+}
+
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+}
+th, td { 
+    padding: 12px 15px; 
+    text-align: left; 
+    border-bottom: 1px solid #eee; 
+    vertical-align: top; 
+}
+th { 
+    background-color: #f8f9fa; 
+    color: #555; 
+    font-weight: 600; 
+}
+
+/* --- 📱 MOBILE VIEW (iPhone Friendly) --- */
+@media (max-width: 768px) {
+    /* ซ่อนหัวตาราง */
+    thead { display: none; }
+    
+    /* เปลี่ยนตารางเป็น Block */
+    table, tbody, tr, td { display: block; width: 100%; }
+    
+    .card { background: transparent; box-shadow: none; }
+    
+    /* สไตล์ของการ์ดแต่ละแถว (Row -> Card) */
+    tr {
+        background: white;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 15px;
+        position: relative;
+    }
+
+    /* จัด Layout ในการ์ด */
+    td {
+        padding: 4px 0;
+        border: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        text-align: right;
+    }
+
+    /* ใส่ Label หน้าข้อมูลโดยใช้ attribute data-label */
+    td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #777;
+        text-align: left;
+        flex: 1;
+        padding-right: 10px;
+        font-size: 0.9em;
+    }
+    
+    /* จัดการแสดงผลเฉพาะช่องเพื่อความสวยงาม */
+    
+    /* Ward + Bed (หัวการ์ด) */
+    td[data-label="Bed"] {
+        order: -2; /* ย้ายไปบนสุด */
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+    td[data-label="Ward"] {
+        order: -1;
+        font-size: 0.9em;
+        color: #666;
+        display: inline-block; /* ให้แสดงคู่กับ Bed ถ้าทำได้ หรือแสดงแยก */
+        margin-bottom: 5px;
+    }
+
+    /* Action Buttons (ท้ายการ์ด) */
+    td[data-label="Action"] {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+        justify-content: flex-end;
+    }
+    
+    /* ปรับแต่งปุ่มในมือถือให้ใหญ่ขึ้นกดง่าย */
+    .action-buttons button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    /* ซ่อน Label ของ Action เพราะรู้กันอยู่แล้ว */
+    td[data-label="Action"]::before { content: none; }
+    
+    /* ปรับ Control Bar ในมือถือ */
+    .controls-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .controls-right {
+        flex-direction: column;
+    }
+    .search-box, .sort-box {
+        width: 100%;
+    }
+}
+
+/* Utility */
+.text-muted { color: #666; font-size: 0.85em; }
+.text-orange { color: #e67e22; }
 
 /* Modal */
 .modal {
@@ -119,50 +262,18 @@ th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowr
     background-color: rgba(0,0,0,0.5);
     overflow-y: auto;
 }
-
 .modal-content {
     background-color: white;
-    margin: 5% auto;
-    padding: 25px;
+    margin: 10% auto;
+    padding: 20px;
     width: 90%;
     max-width: 500px;
     border-radius: 8px;
-    position: relative;
 }
-
-.close-btn {
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* Form Elements */
+.close-btn { float: right; font-size: 28px; cursor: pointer; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
 .form-group input, .form-group select, .form-group textarea {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-family: 'Sarabun', sans-serif;
+    width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
 }
-.form-row { display: flex; gap: 15px; }
-
-/* Utility */
-.text-muted { color: #666; font-size: 0.85em; }
-.text-orange { color: #e67e22; }
-.status-badge { 
-    background: #d4edda; color: #155724; 
-    padding: 2px 8px; border-radius: 10px; font-size: 0.8em; 
-}
-.status-badge.discharged {
-    background: #e2e3e5; color: #383d41; /* สีเทาสำหรับคนไข้ที่ D/C แล้ว */
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-    .controls-bar { flex-direction: column; align-items: stretch; }
-    .search-box { width: 100%; }
-}
+.form-row { display: flex; gap: 10px; }

@@ -25,6 +25,7 @@ const modal = document.getElementById('modal');
 const closeBtn = document.querySelector('.close-btn');
 const admitForm = document.getElementById('admit-form');
 const searchInput = document.getElementById('searchInput');
+const sortBySelect = document.getElementById('sortBy'); // เพิ่มตัวแปร Sort
 const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-btn');
 
@@ -37,8 +38,7 @@ if(document.getElementById('admitDate')) {
 // ------------------------------------------------------------------
 // 1. Real-time Listener
 // ------------------------------------------------------------------
-// แก้ไข: เรียงแค่ Ward อย่างเดียวก่อน เพื่อแก้ปัญหา Index Error (ข้อมูลจะขึ้นทันที)
-// หากต้องการเรียง Ward + Bed ต้องไปกดสร้าง Composite Index ใน Firebase Console ตามลิงก์ที่ขึ้นใน F12 ก่อน
+// ดึงข้อมูลตาม Ward มาก่อน (Sort หลัก)
 const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
 
 onSnapshot(q, (querySnapshot) => {
@@ -46,25 +46,57 @@ onSnapshot(q, (querySnapshot) => {
     querySnapshot.forEach((docSnap) => {
         allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
     });
-    renderPatients(allPatientsData);
+    // เรียกใช้ฟังก์ชัน applyFilterAndSort เพื่อแสดงผล
+    applyFilterAndSort();
 }, (error) => {
     console.error("Error:", error);
-    // แสดง Error บนหน้าจอแทนการค้าง Loading
     const errorMsg = `
         <tr>
             <td colspan="9" style="text-align:center; color: #c0392b; padding: 20px;">
-                <strong>⚠️ เกิดข้อผิดพลาด (Error):</strong> ${error.message}<br>
-                <small>
-                    1. ลองกด <strong>F12</strong> ดู Console ว่ามีลิงก์สร้าง Index หรือไม่<br>
-                    2. ลองกดปุ่ม <strong>"รับเคสใหม่"</strong> เพื่อสร้าง Database ก้อนใหม่<br>
-                    3. เช็ค <strong>Firestore Rules</strong> ว่าอนุญาตให้เขียน/อ่านหรือไม่
-                </small>
+                <strong>⚠️ เกิดข้อผิดพลาด:</strong> ${error.message}
             </td>
         </tr>`;
     patientList.innerHTML = errorMsg;
     dischargedList.innerHTML = errorMsg;
 });
 
+// ------------------------------------------------------------------
+// 2. Logic รวม: Filter (Search) + Sort
+// ------------------------------------------------------------------
+function applyFilterAndSort() {
+    const keyword = searchInput.value.toLowerCase().trim();
+    const sortValue = sortBySelect.value;
+
+    // 2.1 Filter
+    let filteredData = allPatientsData.filter(pt => {
+        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
+        return searchStr.includes(keyword);
+    });
+
+    // 2.2 Sort (ทำในเครื่อง Client เลย ไม่ต้อง Query ใหม่ เร็วกว่า)
+    filteredData.sort((a, b) => {
+        if (sortValue === 'bed') {
+            // เรียงเตียงแบบตัวเลข (Numeric Sort) เช่น 2 มาก่อน 10
+            return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
+        } else if (sortValue === 'date') {
+            // เรียงตามวันที่
+            return new Date(a.date || 0) - new Date(b.date || 0);
+        } else {
+            // Default: Ward
+            return (a.ward || '').localeCompare(b.ward || '');
+        }
+    });
+
+    renderPatients(filteredData);
+}
+
+// Event Listeners สำหรับ Search และ Sort
+searchInput.addEventListener('input', applyFilterAndSort);
+sortBySelect.addEventListener('change', applyFilterAndSort);
+
+// ------------------------------------------------------------------
+// 3. Render
+// ------------------------------------------------------------------
 function renderPatients(data) {
     patientList.innerHTML = '';
     dischargedList.innerHTML = '';
@@ -74,7 +106,7 @@ function renderPatients(data) {
 
     // --- Active ---
     if (activeCases.length === 0) {
-        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่พบผู้ป่วย (No Active Case) - ลองกดรับเคสใหม่ดูครับ</td></tr>';
+        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่พบข้อมูล</td></tr>';
     } else {
         activeCases.forEach(pt => {
             patientList.appendChild(createRow(pt, true));
@@ -96,7 +128,6 @@ function createRow(pt, isActive) {
     
     let actionButtons = '';
     if (isActive) {
-        // ปุ่มสำหรับ Active Case (Edit, D/C, Delete)
         actionButtons = `
             <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')" title="แก้ไข">
                 <i class="fas fa-edit"></i>
@@ -109,8 +140,6 @@ function createRow(pt, isActive) {
             </button>
         `;
     } else {
-        // ปุ่มสำหรับ Discharged Case (Return to Active, Delete)
-        // เพิ่มปุ่ม Return สีฟ้า (#3498db)
         actionButtons = `
             <button class="btn-sm" style="background-color: #3498db;" onclick="window.readmitCase('${pt.id}')" title="ย้ายกลับ Active">
                 <i class="fas fa-undo"></i> Return
@@ -121,25 +150,25 @@ function createRow(pt, isActive) {
         `;
     }
 
-    // ลบส่วนแสดง Status badge ออกจากคอลัมน์ Bed ตามที่ขอ
+    // เพิ่ม attribute 'data-label' ในแต่ละ td เพื่อให้ CSS Mobile View ดึงไปแสดงเป็นหัวข้อได้
     row.innerHTML = `
-        <td><strong>${pt.ward || '-'}</strong></td>
-        <td>
+        <td data-label="Ward"><strong>${pt.ward || '-'}</strong></td>
+        <td data-label="Bed">
             <div style="font-size:1.1em;">${pt.bed || '?'}</div>
         </td>
-        <td>${pt.date || '-'}</td>
-        <td>
+        <td data-label="Date">${pt.date || '-'}</td>
+        <td data-label="HN / AN">
             <div><strong>HN:</strong> ${pt.hn || '-'}</div>
             <div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div>
         </td>
-        <td>
+        <td data-label="Patient Info">
             <div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div>
             <div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div>
         </td>
-        <td>${pt.diag || '-'}</td>
-        <td>${pt.owner || '-'}</td>
-        <td class="text-orange">${pt.note || '-'}</td>
-        <td>
+        <td data-label="Diagnosis">${pt.diag || '-'}</td>
+        <td data-label="Owner">${pt.owner || '-'}</td>
+        <td data-label="Note" class="text-orange">${pt.note || '-'}</td>
+        <td data-label="Action">
             <div class="action-buttons">
                 ${actionButtons}
             </div>
@@ -149,23 +178,9 @@ function createRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 2. Search (เพิ่มการค้นหาด้วย Ward)
-// ------------------------------------------------------------------
-searchInput.addEventListener('input', (e) => {
-    const keyword = e.target.value.toLowerCase().trim();
-    const filteredData = allPatientsData.filter(pt => {
-        // เพิ่ม ${pt.ward} เข้าไปในเงื่อนไขการค้นหา
-        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
-        return searchStr.includes(keyword);
-    });
-    renderPatients(filteredData);
-});
-
-// ------------------------------------------------------------------
-// 3. Actions
+// 4. Actions (CRUD)
 // ------------------------------------------------------------------
 
-// ฟังก์ชัน Discharge
 window.dischargeCase = async (docId) => {
     if(confirm('ยืนยันจำหน่ายผู้ป่วย (Discharge)?')) {
         try {
@@ -179,13 +194,12 @@ window.dischargeCase = async (docId) => {
     }
 }
 
-// ฟังก์ชันดึงเคสกลับ (Undo Discharge / Re-admit)
 window.readmitCase = async (docId) => {
     if(confirm('ยืนยันย้ายผู้ป่วยรายนี้กลับไป Active List?')) {
         try {
             await updateDoc(doc(db, COLLECTION_NAME, docId), {
                 status: 'Active',
-                dischargedAt: null // เคลียร์เวลาจำหน่ายออก
+                dischargedAt: null 
             });
         } catch (error) {
             alert("Error: " + error.message);
@@ -193,7 +207,6 @@ window.readmitCase = async (docId) => {
     }
 }
 
-// ฟังก์ชันลบถาวร
 window.deleteCase = async (docId) => {
     if(confirm('⚠️ ยืนยันลบข้อมูลถาวร?')) {
         try {
@@ -212,7 +225,7 @@ if(admitForm) {
 
         const editDocId = document.getElementById('edit-doc-id').value;
         const patientData = {
-            ward: document.getElementById('ward').value || "", // รับค่า Ward
+            ward: document.getElementById('ward').value || "", 
             bed: document.getElementById('bed').value || "",
             date: document.getElementById('admitDate').value || "",
             hn: document.getElementById('hn').value || "",
@@ -252,7 +265,6 @@ window.openEditModal = (id) => {
     modalTitle.innerText = "แก้ไขข้อมูลผู้ป่วย (Edit)";
     document.getElementById('edit-doc-id').value = id;
     
-    // เติมข้อมูลลงฟอร์ม (รวม Ward)
     document.getElementById('ward').value = pt.ward || "";
     document.getElementById('bed').value = pt.bed || "";
     document.getElementById('admitDate').value = pt.date || "";

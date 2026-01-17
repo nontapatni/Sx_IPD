@@ -16,23 +16,39 @@
             <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
         </header>
 
-        <div class="controls-bar">
-            <button id="add-btn" class="btn btn-primary">
-                <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
-            </button>
-            <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+        <!-- Control Bar: Sort & Search & Add -->
+        <div class="controls-wrapper">
+            <div class="controls-left">
+                <button id="add-btn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Admit
+                </button>
+            </div>
+            
+            <div class="controls-right">
+                <!-- Dropdown สำหรับ Sort -->
+                <div class="sort-box">
+                    <i class="fas fa-sort-amount-down sort-icon"></i>
+                    <select id="sortBy">
+                        <option value="ward">Sort by Ward</option>
+                        <option value="bed">Sort by Bed</option>
+                        <option value="date">Sort by Date</option>
+                    </select>
+                </div>
+
+                <!-- ช่อง Search -->
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search HN, Name...">
+                </div>
             </div>
         </div>
 
         <!-- ตารางที่ 1: Active Cases -->
-        <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
+        <div class="section-header"><i class="fas fa-procedures"></i> Active Cases</div>
         <div class="card">
             <table id="active-table">
                 <thead>
                     <tr>
-                        <!-- เพิ่มคอลัมน์ Ward -->
                         <th style="width: 80px;">Ward</th>
                         <th style="width: 60px;">Bed</th>
                         <th>Date</th>
@@ -41,7 +57,7 @@
                         <th>Diagnosis</th>
                         <th>Owner</th>
                         <th>Note</th>
-                        <th style="width: 140px;">Action</th>
+                        <th style="width: 120px;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="patient-list">
@@ -51,12 +67,11 @@
         </div>
 
         <!-- ตารางที่ 2: Discharged Cases -->
-        <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
+        <div class="section-header"><i class="fas fa-history"></i> Discharged History</div>
         <div class="card">
             <table id="discharged-table">
                 <thead>
                     <tr>
-                        <!-- เพิ่มคอลัมน์ Ward -->
                         <th style="width: 80px;">Ward</th>
                         <th style="width: 60px;">Bed</th>
                         <th>Date</th>
@@ -83,7 +98,6 @@
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
                 
-                <!-- ปรับ Layout: Ward + Bed + Date อยู่บรรทัดเดียวกัน -->
                 <div class="form-row">
                     <div class="form-group" style="flex: 1.5;">
                         <label>Ward</label>
