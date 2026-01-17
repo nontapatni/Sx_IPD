@@ -42,6 +42,11 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px;">
+                    <!-- ปุ่มตั้งค่า (Admin Only) -->
+                    <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-cog"></i> ตั้งค่า (Settings)
+                    </button>
+
                     <!-- ปุ่มเพิ่ม User (Admin Only) -->
                     <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้
@@ -185,17 +190,13 @@
             <h2 id="modal-title">รับเคสใหม่</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
+                
                 <div class="form-row">
                     <div class="form-group" style="flex: 1.5;">
                         <label>Ward</label>
-                        <select id="ward">
+                        <!-- ตัวเลือกจะถูกโหลดจาก Firebase -->
+                        <select id="ward" required>
                             <option value="" selected>- เลือก Ward -</option>
-                            <option value="Sx ชาย">Sx ชาย</option>
-                            <option value="Sx หญิง">Sx หญิง</option>
-                            <option value="Burn Unit">Burn Unit</option>
-                            <option value="SICU">SICU</option>
-                            <option value="Trauma">Trauma</option>
-                            <option value="Private">Private (พิเศษ)</option>
                         </select>
                     </div>
                     <div class="form-group" style="flex: 1;">
@@ -207,6 +208,7 @@
                         <input type="date" id="admitDate">
                     </div>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>HN</label>
@@ -217,10 +219,12 @@
                         <input type="text" id="an" placeholder="66xxxxxx">
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>ชื่อ-สกุล</label>
                     <input type="text" id="name">
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>อายุ</label>
@@ -235,29 +239,25 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>Diagnosis</label>
                     <input type="text" id="diag" placeholder="เช่น Acute Appendicitis">
                 </div>
+
                 <div class="form-group">
                     <label>Owner</label>
+                    <!-- ตัวเลือกจะถูกโหลดจาก Firebase -->
                     <select id="owner">
                         <option value="" selected>-- เลือก Staff/Resident --</option>
-                        <option value="อ.สมศักดิ์">อ.สมศักดิ์</option>
-                        <option value="อ.วิชัย">อ.วิชัย</option>
-                        <option value="อ.ปราณี">อ.ปราณี</option>
-                        <optgroup label="Resident Team">
-                            <option value="R4 Somjai">R4 Somjai</option>
-                            <option value="R3 Somsri">R3 Somsri</option>
-                            <option value="R2 Sompong">R2 Sompong</option>
-                            <option value="R1 Nontapat">R1 Nontapat</option>
-                        </optgroup>
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label>Note</label>
                     <textarea id="note" rows="2"></textarea>
                 </div>
+
                 <button type="submit" id="submit-btn" class="btn btn-submit">บันทึกข้อมูล</button>
             </form>
         </div>
@@ -317,6 +317,31 @@
                     <input type="password" id="new-self-password" required minlength="6">
                 </div>
                 <button type="submit" class="btn btn-submit" style="background-color: #f39c12;">บันทึกรหัสผ่านใหม่</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Settings (Admin Only) - NEW -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('settings-modal')">&times;</span>
+            <h2 style="color: #34495e;"><i class="fas fa-cog"></i> ตั้งค่า Dropdown</h2>
+            <p style="color:#666; font-size:0.9em; margin-bottom:15px;">แก้ไขรายชื่อ Ward และ Owner (พิมพ์ 1 ชื่อต่อ 1 บรรทัด)</p>
+            
+            <form id="settings-form">
+                <div class="form-group">
+                    <label>รายชื่อ Wards</label>
+                    <textarea id="settings-wards" rows="5" placeholder="Sx ชาย\nSx หญิง..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>รายชื่อ Staff (อาจารย์)</label>
+                    <textarea id="settings-staff" rows="4" placeholder="อ.สมศักดิ์\nอ.วิชัย..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>รายชื่อ Residents (แพทย์ประจำบ้าน)</label>
+                    <textarea id="settings-residents" rows="4" placeholder="R4 Somjai\nR3 Somsri..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-submit" style="background-color: #34495e;">บันทึกการตั้งค่า</button>
             </form>
         </div>
     </div>

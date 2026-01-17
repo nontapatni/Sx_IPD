@@ -1,8 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-// ✅ เพิ่ม createUserWithEmailAndPassword ใน import
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyClYDNeWk_yEm0WWe65qm4F7iBGStE6-KI",
@@ -21,6 +20,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
 const SCHEDULE_COLLECTION = "schedules";
+const SETTINGS_COLLECTION = "settings";
+const SETTINGS_DOC_ID = "dropdown_config";
 
 // Secondary App สำหรับสร้าง User โดยไม่ Logout Admin
 const secondaryApp = initializeApp(firebaseConfig, "Secondary");
@@ -41,10 +42,13 @@ onAuthStateChanged(auth, (user) => {
         currentUser = user;
         console.log("Logged in:", user.email);
         
-        // Check Admin -> Show Add User Button
+        // Check Admin
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
         const addUserBtn = document.getElementById('open-create-user-btn');
+        const settingsBtn = document.getElementById('open-settings-btn'); // ปุ่มตั้งค่า
+        
         if(addUserBtn) addUserBtn.style.display = isAdmin ? 'flex' : 'none';
+        if(settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none';
 
         authScreen.style.display = 'none';
         appContainer.style.display = 'block';
@@ -89,9 +93,8 @@ if (createUserForm) {
         createUserMsg.innerText = "กำลังสร้าง...";
 
         try {
-            // สร้าง User ผ่าน Secondary App
             await createUserWithEmailAndPassword(secondaryAuth, fakeEmail, password);
-            await signOut(secondaryAuth); // Sign out secondary immediately
+            await signOut(secondaryAuth); 
 
             createUserMsg.style.color = "green";
             createUserMsg.innerText = `สร้าง user "${username}" สำเร็จ!`;
@@ -101,7 +104,6 @@ if (createUserForm) {
                 window.closeModal('create-user-modal');
             }, 1500);
         } catch (error) {
-            console.error(error);
             createUserMsg.style.color = "red";
             createUserMsg.innerText = getErrorMessage(error.code);
         }
@@ -146,6 +148,111 @@ function getErrorMessage(code) {
         case 'auth/weak-password': return "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
         case 'auth/invalid-credential': return "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
         default: return "เกิดข้อผิดพลาด: " + code;
+    }
+}
+
+// --- SETTINGS LOGIC (NEW) ---
+const openSettingsBtn = document.getElementById('open-settings-btn');
+const settingsForm = document.getElementById('settings-form');
+
+// ฟังก์ชันโหลดข้อมูล Dropdown จาก Firebase
+function loadDropdownSettings() {
+    const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
+    
+    onSnapshot(docRef, (docSnap) => {
+        let data = docSnap.data();
+        
+        // ถ้ายังไม่มีข้อมูลใน DB ให้ใช้ค่า Default
+        if (!docSnap.exists()) {
+            data = {
+                wards: ["Sx ชาย", "Sx หญิง", "Burn Unit", "SICU", "Trauma", "Private"],
+                staff: ["อ.สมศักดิ์", "อ.วิชัย", "อ.ปราณี"],
+                residents: ["R4 Somjai", "R3 Somsri", "R2 Sompong", "R1 Nontapat"]
+            };
+            // บันทึกค่า Default ลง DB ครั้งแรก
+            setDoc(docRef, data); 
+        }
+
+        // อัปเดต UI (Dropdowns)
+        updateSelectOptions('ward', data.wards);
+        updateOwnerOptions(data.staff, data.residents);
+
+        // อัปเดตในฟอร์ม Settings (ถ้าเปิดอยู่)
+        document.getElementById('settings-wards').value = data.wards.join('\n');
+        document.getElementById('settings-staff').value = data.staff.join('\n');
+        document.getElementById('settings-residents').value = data.residents.join('\n');
+    });
+}
+
+// ฟังก์ชันช่วยเติม Option ใน Select
+function updateSelectOptions(selectId, items) {
+    const select = document.getElementById(selectId);
+    if(!select) return;
+    const currentVal = select.value; // เก็บค่าที่เลือกอยู่เดิม
+    select.innerHTML = `<option value="">- เลือก ${selectId} -</option>`;
+    
+    items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        select.appendChild(option);
+    });
+    
+    if (items.includes(currentVal)) select.value = currentVal;
+}
+
+// ฟังก์ชันช่วยเติม Owner (แบบมี Optgroup)
+function updateOwnerOptions(staffList, resList) {
+    const select = document.getElementById('owner');
+    if(!select) return;
+    const currentVal = select.value;
+    select.innerHTML = `<option value="">-- เลือก Staff/Resident --</option>`;
+
+    // Group 1: Staff
+    itemsToOptGroup(select, "Staff (อาจารย์)", staffList);
+    // Group 2: Resident
+    itemsToOptGroup(select, "Resident Team", resList);
+
+    // เช็คว่าค่าเดิมยังอยู่ไหม ถ้าอยู่ก็เลือกคืนไป
+    const allOptions = Array.from(select.options).map(o => o.value);
+    if(allOptions.includes(currentVal)) select.value = currentVal;
+}
+
+function itemsToOptGroup(selectElem, label, items) {
+    const group = document.createElement('optgroup');
+    group.label = label;
+    items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        group.appendChild(option);
+    });
+    selectElem.appendChild(group);
+}
+
+// บันทึกการตั้งค่า
+if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const wards = document.getElementById('settings-wards').value.split('\n').map(s => s.trim()).filter(s => s);
+        const staff = document.getElementById('settings-staff').value.split('\n').map(s => s.trim()).filter(s => s);
+        const residents = document.getElementById('settings-residents').value.split('\n').map(s => s.trim()).filter(s => s);
+
+        try {
+            await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), {
+                wards, staff, residents, updatedAt: serverTimestamp()
+            });
+            alert("บันทึกการตั้งค่าเรียบร้อย!");
+            window.closeModal('settings-modal');
+        } catch (error) {
+            alert("บันทึกไม่สำเร็จ: " + error.message);
+        }
+    });
+}
+
+if (openSettingsBtn) {
+    openSettingsBtn.onclick = () => {
+        document.getElementById('settings-modal').style.display = 'block';
     }
 }
 
@@ -195,11 +302,18 @@ window.closeModal = (modalId) => document.getElementById(modalId).style.display 
 window.openChangePasswordModal = () => document.getElementById('change-password-modal').style.display = 'block';
 
 function initApp() {
+    console.log("App Initializing...");
+    
+    // โหลดการตั้งค่า Dropdown
+    loadDropdownSettings();
+
     // 1. Patients Listener
     const qPatients = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
     onSnapshot(qPatients, (querySnapshot) => {
         allPatientsData = [];
-        querySnapshot.forEach((docSnap) => allPatientsData.push({ id: docSnap.id, ...docSnap.data() }));
+        querySnapshot.forEach((docSnap) => {
+            allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
+        });
         renderPatients(allPatientsData);
     });
 
@@ -217,7 +331,7 @@ function initApp() {
     });
 }
 
-// --- RENDERING FUNCTIONS ---
+// --- RENDERING FUNCTIONS (เหมือนเดิม) ---
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
@@ -444,10 +558,19 @@ window.openEditModal = (id) => {
     const pt = allPatientsData.find(p => p.id === id);
     if (!pt) return;
     document.getElementById('edit-doc-id').value = id;
-    document.getElementById('ward').value = pt.ward || ""; document.getElementById('bed').value = pt.bed || ""; document.getElementById('admitDate').value = pt.date || "";
-    document.getElementById('hn').value = pt.hn || ""; document.getElementById('an').value = pt.an || ""; document.getElementById('name').value = pt.name || "";
-    document.getElementById('age').value = pt.age || ""; document.getElementById('gender').value = pt.gender || ""; document.getElementById('diag').value = pt.diag || "";
-    document.getElementById('owner').value = pt.owner || ""; document.getElementById('note').value = pt.note || "";
+    // รอ Dropdown โหลดเสร็จก่อนค่อย set value
+    // (เทคนิค: ดึงค่าจาก Database ใหม่เพื่อให้แน่ใจว่า Option มีอยู่)
+    document.getElementById('ward').value = pt.ward || ""; 
+    document.getElementById('bed').value = pt.bed || ""; 
+    document.getElementById('admitDate').value = pt.date || "";
+    document.getElementById('hn').value = pt.hn || ""; 
+    document.getElementById('an').value = pt.an || ""; 
+    document.getElementById('name').value = pt.name || "";
+    document.getElementById('age').value = pt.age || ""; 
+    document.getElementById('gender').value = pt.gender || ""; 
+    document.getElementById('diag').value = pt.diag || "";
+    document.getElementById('owner').value = pt.owner || ""; 
+    document.getElementById('note').value = pt.note || "";
     document.getElementById('modal-title').innerText = "แก้ไขข้อมูลผู้ป่วย";
     modal.style.display = 'block';
 }
@@ -465,4 +588,5 @@ window.onclick = (e) => {
     if (e.target == dutyModal) window.closeModal('duty-modal');
     if (e.target == document.getElementById('create-user-modal')) window.closeModal('create-user-modal');
     if (e.target == document.getElementById('change-password-modal')) window.closeModal('change-password-modal');
+    if (e.target == document.getElementById('settings-modal')) window.closeModal('settings-modal');
 }
