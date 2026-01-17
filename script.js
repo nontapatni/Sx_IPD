@@ -1,158 +1,218 @@
-// 1. นำเข้า Firebase SDK จาก CDN (เพื่อให้รันบน Browser ได้เลยไม่ต้องลง Node.js)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+// เพิ่ม updateDoc เข้ามา
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
-// 2. การตั้งค่า Firebase ของคุณ (ใส่ให้แล้ว)
 const firebaseConfig = {
     apiKey: "AIzaSyClYDNeWk_yEm0WWe65qm4F7iBGStE6-KI",
     authDomain: "sx-ipd.firebaseapp.com",
     projectId: "sx-ipd",
     storageBucket: "sx-ipd.firebasestorage.app",
     messagingSenderId: "1636907648",
-    appId: "1:1636907648:web:d658a6ba7f9c49e0465", // (ผมเดาว่าตกเลขไปนิดนึงตอน copy แต่ใส่ตามที่คุณให้มาครับ)
+    appId: "1:1636907648:web:d658a6ba7f9c49e0465",
     measurementId: "G-VKXGJ4M03C"
 };
 
-// เริ่มต้นใช้งาน Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); // เปิด Analytics ตามที่ขอ
-const db = getFirestore(app); // เรียกใช้ Database
-const COLLECTION_NAME = "patients"; // ชื่อตารางเก็บข้อมูล
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const COLLECTION_NAME = "patients";
 
-// Select Elements (ตัวแปรเชื่อมกับหน้าจอ)
+// Elements
 const patientList = document.getElementById('patient-list');
 const addBtn = document.getElementById('add-btn');
 const modal = document.getElementById('modal');
 const closeBtn = document.querySelector('.close-btn');
 const admitForm = document.getElementById('admit-form');
+const searchInput = document.getElementById('searchInput');
+const modalTitle = document.getElementById('modal-title');
+const submitBtn = document.getElementById('submit-btn');
 
-// ตั้งค่า Default วันที่ให้เป็นวันปัจจุบัน
+// เก็บข้อมูลทั้งหมดไว้ในตัวแปรนี้ เพื่อให้ Search กรองได้โดยไม่ต้องโหลดจาก Server ใหม่
+let allPatientsData = [];
+
+// Default Date
 if(document.getElementById('admitDate')) {
     document.getElementById('admitDate').valueAsDate = new Date();
 }
 
 // ------------------------------------------------------------------
-// 3. ฟังก์ชัน Real-time Listener (หัวใจสำคัญ: ดึงข้อมูลและคอยฟังการเปลี่ยนแปลง)
+// 1. Real-time Listener & Data Handling
 // ------------------------------------------------------------------
-const q = query(collection(db, COLLECTION_NAME), orderBy("bed")); // ดึงข้อมูลโดยเรียงตามเตียง
+const q = query(collection(db, COLLECTION_NAME), orderBy("bed"));
 
-// onSnapshot คือตัวที่ทำให้มัน Real-time (ทำงานเองทุกครั้งที่มีใครแก้ข้อมูล)
 onSnapshot(q, (querySnapshot) => {
-    patientList.innerHTML = ''; // ล้างตารางเก่าก่อนวาดใหม่
+    allPatientsData = []; // ล้างข้อมูลเก่า
+    querySnapshot.forEach((docSnap) => {
+        allPatientsData.push({
+            id: docSnap.id, // เก็บ ID ไว้ใช้อ้างอิงตอน Edit/Delete
+            ...docSnap.data()
+        });
+    });
+    // เรียกแสดงผลทันที (ส่งข้อมูลทั้งหมดไปแสดง)
+    renderPatients(allPatientsData);
+}, (error) => {
+    console.error("Error:", error);
+});
+
+// ฟังก์ชันวาดตาราง (แยกออกมาเพื่อให้ Search เรียกใช้ได้)
+function renderPatients(data) {
+    patientList.innerHTML = '';
     
-    if (querySnapshot.empty) {
-        patientList.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">ยังไม่มีเคสในวอร์ด (No Active Case)</td></tr>';
+    if (data.length === 0) {
+        patientList.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">ไม่พบข้อมูล</td></tr>';
         return;
     }
 
-    querySnapshot.forEach((docSnap) => {
-        const pt = docSnap.data();
-        const docId = docSnap.id; // ID ของเอกสาร (ใช้สำหรับอ้างอิงตอนลบ)
-
+    data.forEach((pt) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <strong style="font-size:1.2em;">${pt.bed}</strong>
+                <strong style="font-size:1.2em;">${pt.bed || '?'}</strong>
                 <div class="status-badge">${pt.status || 'Active'}</div>
             </td>
-            <td>${pt.date}</td>
+            <td>${pt.date || '-'}</td>
             <td>
-                <div><strong>HN:</strong> ${pt.hn}</div>
-                <div class="text-muted"><strong>AN:</strong> ${pt.an}</div>
+                <div><strong>HN:</strong> ${pt.hn || '-'}</div>
+                <div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div>
             </td>
             <td>
-                <div style="font-weight:600;">${pt.name}</div>
-                <div class="text-muted">${pt.age} ปี / ${pt.gender}</div>
+                <div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div>
+                <div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div>
             </td>
-            <td>${pt.diag}</td>
-            <td>${pt.owner}</td>
+            <td>${pt.diag || '-'}</td>
+            <td>${pt.owner || '-'}</td>
             <td class="text-orange">${pt.note || '-'}</td>
             <td>
-                <button class="btn btn-danger" onclick="window.deleteCase('${docId}')">D/C</button>
+                <div class="action-buttons">
+                    <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </td>
         `;
         patientList.appendChild(row);
     });
-}, (error) => {
-    console.error("Error getting documents: ", error);
-    // แจ้งเตือนถ้าลืมเปิดโหมด Test ใน Database
-    if(error.code === 'permission-denied') {
-        alert("Permission Denied: อย่าลืมไปตั้งค่า Firestore Rules ให้เป็น Test Mode ก่อนนะครับ");
-    }
+}
+
+// ------------------------------------------------------------------
+// 2. Search Functionality
+// ------------------------------------------------------------------
+searchInput.addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase().trim();
+    
+    // กรองข้อมูลใน Memory
+    const filteredData = allPatientsData.filter(pt => {
+        const searchStr = `${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
+        return searchStr.includes(keyword);
+    });
+
+    renderPatients(filteredData);
 });
 
 // ------------------------------------------------------------------
-// 4. ฟังก์ชันเพิ่มข้อมูล (Add Data) เมื่อกดปุ่มบันทึกใน Modal
+// 3. Add & Edit Logic
 // ------------------------------------------------------------------
 if(admitForm) {
     admitForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // ทำปุ่ม Loading กันคนกดรัว
-        const submitBtn = admitForm.querySelector('button[type="submit"]');
-        const oldText = submitBtn.innerText;
         submitBtn.innerText = "กำลังบันทึก...";
         submitBtn.disabled = true;
 
+        const editDocId = document.getElementById('edit-doc-id').value; // เช็คว่ามี ID ไหม
+        
+        // เตรียมข้อมูล (ใช้ || null เพื่อให้ field ที่ว่างไม่ error)
+        const patientData = {
+            bed: document.getElementById('bed').value || "",
+            date: document.getElementById('admitDate').value || "",
+            hn: document.getElementById('hn').value || "",
+            an: document.getElementById('an').value || "",
+            name: document.getElementById('name').value || "",
+            age: document.getElementById('age').value || "",
+            gender: document.getElementById('gender').value || "",
+            diag: document.getElementById('diag').value || "",
+            owner: document.getElementById('owner').value || "",
+            note: document.getElementById('note').value || "",
+            status: "Active",
+            timestamp: serverTimestamp()
+        };
+
         try {
-            // เตรียมข้อมูลจากฟอร์ม
-            const newPatient = {
-                bed: document.getElementById('bed').value,
-                date: document.getElementById('admitDate').value,
-                hn: document.getElementById('hn').value,
-                an: document.getElementById('an').value,
-                name: document.getElementById('name').value,
-                age: document.getElementById('age').value,
-                gender: document.getElementById('gender').value,
-                diag: document.getElementById('diag').value,
-                owner: document.getElementById('owner').value,
-                note: document.getElementById('note').value,
-                status: "Active",
-                timestamp: serverTimestamp() // บันทึกเวลาที่ Server เพื่อความแม่นยำ
-            };
-
-            // ส่งข้อมูลขึ้น Firebase Cloud
-            await addDoc(collection(db, COLLECTION_NAME), newPatient);
-            
-            // ปิด Modal และเคลียร์ค่า
-            modal.style.display = 'none';
-            admitForm.reset();
-            document.getElementById('admitDate').valueAsDate = new Date();
-
+            if (editDocId) {
+                // --- กรณีแก้ไข (Update) ---
+                await updateDoc(doc(db, COLLECTION_NAME, editDocId), patientData);
+            } else {
+                // --- กรณีเพิ่มใหม่ (Add) ---
+                await addDoc(collection(db, COLLECTION_NAME), patientData);
+            }
+            closeModal();
         } catch (error) {
-            console.error("Error adding document: ", error);
-            alert("เกิดข้อผิดพลาด: " + error.message);
+            console.error("Error:", error);
+            alert("บันทึกไม่สำเร็จ: " + error.message);
         } finally {
-            submitBtn.innerText = oldText;
+            submitBtn.innerText = "บันทึกข้อมูล";
             submitBtn.disabled = false;
         }
     });
 }
 
+// ฟังก์ชันเปิด Modal สำหรับ Edit
+window.openEditModal = (id) => {
+    const pt = allPatientsData.find(p => p.id === id);
+    if (!pt) return;
+
+    // เปลี่ยน Title Modal
+    modalTitle.innerText = "แก้ไขข้อมูลผู้ป่วย (Edit)";
+    document.getElementById('edit-doc-id').value = id; // ฝัง ID ไว้
+    
+    // กรอกข้อมูลเดิมลงไป
+    document.getElementById('bed').value = pt.bed || "";
+    document.getElementById('admitDate').value = pt.date || "";
+    document.getElementById('hn').value = pt.hn || "";
+    document.getElementById('an').value = pt.an || "";
+    document.getElementById('name').value = pt.name || "";
+    document.getElementById('age').value = pt.age || "";
+    document.getElementById('gender').value = pt.gender || "";
+    document.getElementById('diag').value = pt.diag || "";
+    document.getElementById('owner').value = pt.owner || "";
+    document.getElementById('note').value = pt.note || "";
+
+    modal.style.display = 'block';
+}
+
 // ------------------------------------------------------------------
-// 5. ฟังก์ชันลบข้อมูล (Discharge)
+// 4. Delete & Utility Functions
 // ------------------------------------------------------------------
-// ต้องประกาศเป็น window.xxx เพื่อให้ปุ่มใน HTML เรียกใช้ได้
 window.deleteCase = async (docId) => {
-    if(confirm('ยืนยันจำหน่ายคนไข้ (Discharge) ออกจากวอร์ด? \nข้อมูลจะถูกลบออกจากระบบ')) {
+    if(confirm('ยืนยันลบเคสนี้?')) {
         try {
             await deleteDoc(doc(db, COLLECTION_NAME, docId));
-            // ไม่ต้องสั่ง render ใหม่ เพราะ onSnapshot ข้างบนจะรู้เองว่าข้อมูลหายไป
         } catch (error) {
-            console.error("Error removing document: ", error);
-            alert("ลบข้อมูลไม่สำเร็จ: " + error.message);
+            alert("ลบไม่สำเร็จ: " + error.message);
         }
     }
 }
 
-// ------------------------------------------------------------------
-// 6. จัดการการเปิด-ปิด Modal
-// ------------------------------------------------------------------
-if(addBtn) addBtn.onclick = () => modal.style.display = 'block';
-if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-window.onclick = (e) => {
-    if (e.target == modal) modal.style.display = 'none';
+function closeModal() {
+    modal.style.display = 'none';
+    admitForm.reset();
+    document.getElementById('edit-doc-id').value = ""; // ล้าง ID
+    document.getElementById('admitDate').valueAsDate = new Date();
+    modalTitle.innerText = "รับเคสใหม่ (New Admission)"; // คืนค่า Title เดิม
 }
 
-console.log("Sx IPD App initialized with Firebase!");
+// Event Listeners สำหรับ Modal
+if(addBtn) {
+    addBtn.onclick = () => {
+        closeModal(); // ล้างค่าก่อนเปิด เพื่อให้แน่ใจว่าเป็นโหมด Add
+        modal.style.display = 'block';
+    }
+}
+if(closeBtn) closeBtn.onclick = closeModal;
+window.onclick = (e) => {
+    if (e.target == modal) closeModal();
+}
