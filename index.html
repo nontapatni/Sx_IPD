@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sx IPD Ward Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🏥 Sx IPD Ward Manager</h1>
+            <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+        </header>
+
+        <div class="controls" style="margin-bottom: 15px;">
+            <button id="add-btn" class="btn btn-primary">+ รับเคสใหม่ (Admit)</button>
+        </div>
+
+        <div class="card">
+            <table id="patient-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Bed</th>
+                        <th>Date</th>
+                        <th>HN / AN</th>
+                        <th>Patient Info</th>
+                        <th>Diagnosis</th>
+                        <th>Owner</th>
+                        <th>Note</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="patient-list">
+                    <!-- ข้อมูลจะโหลดจาก Firebase มาแสดงที่นี่ -->
+                    <tr><td colspan="8" style="text-align:center;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>รับเคสใหม่ (New Admission)</h2>
+            <form id="admit-form">
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Bed No.</label>
+                        <input type="text" id="bed" required placeholder="14A">
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label>Admit Date</label>
+                        <input type="date" id="admitDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>HN</label>
+                        <input type="text" id="hn" required placeholder="xxxxxxx">
+                    </div>
+                    <div class="form-group">
+                        <label>AN</label>
+                        <input type="text" id="an" required placeholder="66xxxxxx">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>ชื่อ-สกุล</label>
+                    <input type="text" id="name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>อายุ</label>
+                        <input type="number" id="age" required>
+                    </div>
+                    <div class="form-group">
+                        <label>เพศ</label>
+                        <select id="gender">
+                            <option value="M">ชาย</option>
+                            <option value="F">หญิง</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Diagnosis</label>
+                    <input type="text" id="diag" required placeholder="เช่น Acute Appendicitis">
+                </div>
+
+                <div class="form-group">
+                    <label>Owner (แพทย์เจ้าของไข้)</label>
+                    <select id="owner" required>
+                        <option value="" disabled selected>-- เลือก Staff/Resident --</option>
+                        <option value="อ.สมศักดิ์">อ.สมศักดิ์ (Staff A)</option>
+                        <option value="อ.วิชัย">อ.วิชัย (Staff B)</option>
+                        <option value="อ.ปราณี">อ.ปราณี (Staff C)</option>
+                        <optgroup label="Resident Team">
+                            <option value="R4 Somjai">R4 Somjai (Chief)</option>
+                            <option value="R3 Somsri">R3 Somsri</option>
+                            <option value="R2 Sompong">R2 Sompong</option>
+                            <option value="R1 Nontapat">R1 Nontapat</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Note (Short Note)</label>
+                    <textarea id="note" rows="2" placeholder="เช่น Plan Set OR, NPO..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-submit">บันทึกข้อมูล</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- สำคัญ: ต้องใส่ type="module" เพื่อใช้ Firebase -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

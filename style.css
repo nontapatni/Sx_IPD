@@ -1,0 +1,94 @@
+/* ตั้งค่าพื้นฐาน */
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header { margin-bottom: 20px; }
+h1 { color: #2c3e50; margin-bottom: 5px; }
+
+/* ปุ่ม */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Sarabun', sans-serif;
+}
+
+.btn-primary { background-color: #3498db; color: white; }
+.btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
+.btn-danger { background-color: #e74c3c; color: white; font-size: 12px; padding: 5px 10px; }
+
+/* การ์ดและตาราง */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
+
+/* Modal (หน้าต่างเด้ง) */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 25px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-btn {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Form Elements */
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Sarabun', sans-serif;
+}
+.form-row { display: flex; gap: 15px; }
+
+/* Utility Classes */
+.text-muted { color: #666; font-size: 0.85em; }
+.text-orange { color: #e67e22; }
+.status-badge { 
+    background: #d4edda; color: #155724; 
+    padding: 2px 8px; border-radius: 10px; font-size: 0.8em; 
+}
