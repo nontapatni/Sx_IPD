@@ -743,8 +743,23 @@ window.openEditModal = (id) => {
     modal.style.display = 'block';
 }
 
-if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "New case"; modal.style.display = 'block'; };
-if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
+if(addBtn) { 
+    addBtn.onclick = () => { 
+        admitForm.reset(); 
+        document.getElementById('edit-doc-id').value = ""; 
+        // ✅ ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal
+        setInputAsToday('admitDate');
+        document.getElementById('modal-title').innerText = "New case"; 
+        modal.style.display = 'block'; 
+    };
+}
+if(addDutyBtn) addDutyBtn.onclick = () => { 
+    dutyForm.reset(); 
+    editingDutyId = null; 
+    // ✅ ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal ลงเวร
+    setInputAsToday('duty-date');
+    dutyModal.style.display = 'block'; 
+};
 if(openCreateUserBtn) openCreateUserBtn.onclick = () => { 
     document.getElementById('create-user-form').reset(); 
     document.getElementById('create-user-msg').innerText = ""; 
