@@ -41,31 +41,34 @@
                     <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600;"></div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
 
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-                        <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
-                            <i class="fas fa-cog"></i> Settings
-                        </button>
+                    <!-- ✅ ปุ่ม Dark Mode -->
+                    <button id="toggle-dark-mode" class="btn-sm" style="background-color: #555; color: white; padding: 8px 12px; font-size: 14px;" title="Dark Mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
 
-                        <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
-                            <i class="fas fa-user-plus"></i> Add user
-                        </button>
+                    <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
 
-                        <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
-                            <i class="fas fa-key"></i> Change password
-                        </button>
-                        <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </div>
+                    <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-user-plus"></i> Add user
+                    </button>
+
+                    <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-key"></i> Change password
+                    </button>
+                    <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
             </header>
 
-            <!-- 📊 SUMMARY TABLE (อยู่ด้านบนสุด เหมือนเดิม) -->
+            <!-- 📊 SUMMARY TABLE -->
             <div id="summary-section" style="margin-bottom: 20px;">
-                <div class="card" style="background: #fdfefe; border-left: 4px solid #27ae60;">
+                <div class="card summary-card-style" style="border-left: 4px solid #27ae60;">
                     <div style="padding-bottom: 10px; font-weight: bold; color: #555; border-bottom: 1px solid #eee; margin-bottom: 10px;">
                         <i class="fas fa-chart-bar"></i> สรุปยอดคนไข้ (Active Cases by Owner)
                     </div>
@@ -84,7 +87,7 @@
                 </div>
             </div>
 
-            <!-- 🟢 TAB NAVIGATION (ลบ Tab Summary ออกแล้ว) -->
+            <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> All Patients

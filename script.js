@@ -37,6 +37,42 @@ const EMAIL_DOMAIN = "@ward.local";
 let currentUser = null;
 let currentUsername = "";
 
+// ✅ DARK MODE LOGIC
+const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
+
+// ฟังก์ชันเปิด/ปิด และบันทึก
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('sx_ipd_dark_mode', isDark);
+    updateDarkModeIcon(isDark);
+}
+
+// อัปเดตไอคอนปุ่ม
+function updateDarkModeIcon(isDark) {
+    if(toggleDarkModeBtn) {
+        const icon = toggleDarkModeBtn.querySelector('i');
+        if(isDark) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun'); // เปลี่ยนเป็นรูปพระอาทิตย์ตอน Dark Mode
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+        }
+    }
+}
+
+// ตรวจสอบค่าเดิมตอนโหลดหน้าเว็บ
+if (localStorage.getItem('sx_ipd_dark_mode') === 'true') {
+    document.body.classList.add('dark-mode');
+    updateDarkModeIcon(true);
+}
+
+if(toggleDarkModeBtn) {
+    toggleDarkModeBtn.onclick = toggleDarkMode;
+}
+// --------------------
+
 // --- AUTH STATE LISTENER ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -184,6 +220,7 @@ function loadDropdownSettings() {
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
+            // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
             data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
@@ -286,9 +323,6 @@ setInputAsToday('duty-date');
 window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
-    
-    // Always show summary section except on schedule page
-    const summarySection = document.getElementById('summary-section');
 
     document.getElementById('patients-view').style.display = 'none';
     document.getElementById('mypatients-view').style.display = 'none';
@@ -303,6 +337,7 @@ window.switchTab = (tabName) => {
     }
     else if (tabName === 'schedule') {
         document.getElementById('schedule-view').style.display = 'block';
+        // ❌ Removed line that hides summary section
     }
 }
 
@@ -357,7 +392,6 @@ function renderSummary(data) {
         if (pt.status !== 'Discharged') stats[owner].active++;
     });
 
-    // ✅ Sort: Active (มาก->น้อย) -> Total (มาก->น้อย)
     const sortedStats = Object.entries(stats).sort(([, a], [, b]) => {
         if (b.active !== a.active) return b.active - a.active;
         return b.total - a.total;
@@ -516,9 +550,7 @@ function createPatientRow(pt, isActive) {
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     `;
 
-    // Highlight Owner Name (New Logic)
     let displayOwner = pt.owner || '-';
-    // เช็คว่ามี Username และชื่อ Owner มีส่วนที่ตรงกันหรือไม่
     if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
          const highlightStyle = "font-weight: bold; color: #2980b9; background-color: #d6eaf8; padding: 2px 6px; border-radius: 4px; display: inline-block;";
          displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
@@ -555,10 +587,9 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
-        // Highlight Own Name in Schedule
-        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
         let displayWard = duty.ward || '-';
         let displayEr = duty.er || '-';
+        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
 
         if (currentUsername && displayWard.toLowerCase().includes(currentUsername)) {
              displayWard = `<span style="${highlightStyle}">${displayWard}</span>`;

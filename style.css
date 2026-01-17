@@ -335,3 +335,97 @@ table#summary-table td {
     .controls-right { flex-direction: column; width: 100%; }
     .search-box, .sort-box, .sort-box select { width: 100%; }
 }
+
+/* --- DARK MODE STYLES --- */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body.dark-mode .container {
+    background-color: #121212;
+}
+
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode .section-header {
+    color: #e0e0e0 !important; /* บังคับเปลี่ยนสีหัวข้อ */
+}
+
+/* Card & Modal Background */
+body.dark-mode .card,
+body.dark-mode .modal-content,
+body.dark-mode .login-card {
+    background-color: #1e1e1e !important; /* ทับ background เดิมที่เป็น white */
+    border: 1px solid #333;
+    color: #e0e0e0;
+}
+
+/* Input Fields */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+/* Tables */
+body.dark-mode th {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border-bottom: 1px solid #444;
+}
+body.dark-mode td {
+    border-bottom: 1px solid #333;
+    color: #cccccc;
+}
+body.dark-mode td strong {
+    color: #fff;
+}
+
+/* Text Colors */
+body.dark-mode .text-muted { color: #888; }
+body.dark-mode #user-info { color: #aaa !important; }
+
+/* Tabs */
+body.dark-mode .tab-btn {
+    background-color: #2d2d2d;
+    color: #aaa;
+    border: 1px solid #333;
+    border-bottom: none;
+}
+body.dark-mode .tab-btn.active {
+    background-color: #3498db;
+    color: white;
+    border: none;
+}
+body.dark-mode .nav-tabs {
+    border-bottom: 2px solid #444;
+}
+
+/* Buttons */
+body.dark-mode .btn-sm {
+    /* ปรับปุ่มให้ดู Soft ลงนิดนึงใน Dark Mode */
+    opacity: 0.9;
+}
+body.dark-mode .btn-sm:hover {
+    opacity: 1;
+}
+
+/* Override Specific Card Colors in Summary */
+body.dark-mode #summary-section .card {
+    background-color: #1e1e1e !important;
+}
+
+/* Scrollbar (Chrome/Safari) */
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #1e1e1e; 
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #555; 
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #777; 
+}
