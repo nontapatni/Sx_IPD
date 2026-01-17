@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <!-- 🏥 MAIN APP (ซ่อนไว้จนกว่าจะ Login) -->
+    <!-- 🏥 MAIN APP -->
     <div id="app-container">
         <div class="container">
             <header>
@@ -32,68 +32,108 @@
                 <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
             </header>
 
-            <div class="controls-bar">
-                <button id="add-btn" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
+            <!-- 🟢 TAB NAVIGATION (เมนูสลับหน้า) -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="window.switchTab('patients')">
+                    <i class="fas fa-user-injured"></i> รายชื่อคนไข้ (Patient List)
                 </button>
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+                <button class="tab-btn" onclick="window.switchTab('schedule')">
+                    <i class="fas fa-calendar-alt"></i> ตารางเวร (Duty Schedule)
+                </button>
+            </div>
+
+            <!-- ================= PAGE 1: PATIENT LIST ================= -->
+            <div id="patients-view">
+                <div class="controls-bar">
+                    <button id="add-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+                    </div>
+                </div>
+
+                <!-- Active Cases -->
+                <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
+                <div class="card">
+                    <table id="active-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Ward</th>
+                                <th style="width: 60px;">Bed</th>
+                                <th>Date</th>
+                                <th>HN / AN</th>
+                                <th>Patient Info</th>
+                                <th>Diagnosis</th>
+                                <th>Owner</th>
+                                <th>Note</th>
+                                <th style="width: 120px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patient-list">
+                            <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Discharged Cases -->
+                <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
+                <div class="card">
+                    <table id="discharged-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Ward</th>
+                                <th style="width: 60px;">Bed</th>
+                                <th>Date</th>
+                                <th>HN / AN</th>
+                                <th>Patient Info</th>
+                                <th>Diagnosis</th>
+                                <th>Owner</th>
+                                <th>Note</th>
+                                <th style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discharged-list">
+                            <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- ตารางที่ 1: Active Cases -->
-            <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
-            <div class="card">
-                <table id="active-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px;">Ward</th>
-                            <th style="width: 60px;">Bed</th>
-                            <th>Date</th>
-                            <th>HN / AN</th>
-                            <th>Patient Info</th>
-                            <th>Diagnosis</th>
-                            <th>Owner</th>
-                            <th>Note</th>
-                            <th style="width: 120px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="patient-list">
-                        <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
-                    </tbody>
-                </table>
+            <!-- ================= PAGE 2: DUTY SCHEDULE ================= -->
+            <div id="schedule-view" style="display: none;">
+                <div class="controls-bar">
+                    <button id="add-duty-btn" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
+                    </button>
+                </div>
+
+                <div class="card">
+                    <table id="schedule-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 150px;">Date / Day</th>
+                                <th>Staff (อาจารย์เวร)</th>
+                                <th>Resident / Intern</th>
+                                <th>Extern / Ns.</th>
+                                <th style="width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duty-list">
+                            <tr><td colspan="5" style="text-align:center;">Loading schedule...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- ตารางที่ 2: Discharged Cases -->
-            <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
-            <div class="card">
-                <table id="discharged-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px;">Ward</th>
-                            <th style="width: 60px;">Bed</th>
-                            <th>Date</th>
-                            <th>HN / AN</th>
-                            <th>Patient Info</th>
-                            <th>Diagnosis</th>
-                            <th>Owner</th>
-                            <th>Note</th>
-                            <th style="width: 80px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="discharged-list">
-                        <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 
-    <!-- Modal Form -->
+    <!-- Modal 1: Admit Patient -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <span class="close-btn">&times;</span>
+            <span class="close-btn" onclick="window.closeModal('modal')">&times;</span>
             <h2 id="modal-title">รับเคสใหม่ (New Admission)</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
@@ -158,14 +198,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Owner (แพทย์เจ้าของไข้)</label>
+                    <label>Owner</label>
                     <select id="owner">
                         <option value="" selected>-- เลือก Staff/Resident --</option>
-                        <option value="อ.สมศักดิ์">อ.สมศักดิ์ (Staff A)</option>
-                        <option value="อ.วิชัย">อ.วิชัย (Staff B)</option>
-                        <option value="อ.ปราณี">อ.ปราณี (Staff C)</option>
+                        <option value="อ.สมศักดิ์">อ.สมศักดิ์</option>
+                        <option value="อ.วิชัย">อ.วิชัย</option>
+                        <option value="อ.ปราณี">อ.ปราณี</option>
                         <optgroup label="Resident Team">
-                            <option value="R4 Somjai">R4 Somjai (Chief)</option>
+                            <option value="R4 Somjai">R4 Somjai</option>
                             <option value="R3 Somsri">R3 Somsri</option>
                             <option value="R2 Sompong">R2 Sompong</option>
                             <option value="R1 Nontapat">R1 Nontapat</option>
@@ -174,11 +214,38 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Note (Short Note)</label>
-                    <textarea id="note" rows="2" placeholder="เช่น Plan Set OR, NPO..."></textarea>
+                    <label>Note</label>
+                    <textarea id="note" rows="2"></textarea>
                 </div>
 
                 <button type="submit" id="submit-btn" class="btn btn-submit">บันทึกข้อมูล</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Add Duty (ตารางเวร) -->
+    <div id="duty-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('duty-modal')">&times;</span>
+            <h2>ลงตารางเวร (Add Duty)</h2>
+            <form id="duty-form">
+                <div class="form-group">
+                    <label>วันที่ (Date)</label>
+                    <input type="date" id="duty-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Staff (อาจารย์เวร)</label>
+                    <input type="text" id="duty-staff" placeholder="เช่น อ.สมศักดิ์">
+                </div>
+                <div class="form-group">
+                    <label>Resident / Intern (เวร 1)</label>
+                    <input type="text" id="duty-res" placeholder="เช่น R3 Somsri">
+                </div>
+                <div class="form-group">
+                    <label>Extern / Nurse (เวรเสริม)</label>
+                    <input type="text" id="duty-ext" placeholder="เช่น Ext. Malee">
+                </div>
+                <button type="submit" class="btn btn-submit">บันทึกเวร</button>
             </form>
         </div>
     </div>
