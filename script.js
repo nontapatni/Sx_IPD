@@ -204,7 +204,7 @@ function updateSelectOptions(selectId, items) {
     const select = document.getElementById(selectId);
     if(!select || !items) return;
     const currentVal = select.value;
-    select.innerHTML = `<option value="">- เลือก ${selectId} -</option>`;
+    select.innerHTML = `<option value="">- select ${selectId} -</option>`;
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -572,7 +572,7 @@ if (importExcelBtn && excelInput) {
 window.deleteDuty = async (docId) => { if(confirm('ลบ?')) await deleteDoc(doc(db, SCHEDULE_COLLECTION, docId)); }
 window.dischargeCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Discharged', dischargedAt: serverTimestamp(), updatedAt: serverTimestamp() });
 window.readmitCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Active', dischargedAt: null, updatedAt: serverTimestamp() });
-window.deleteCase = async (docId) => { if(confirm('⚠️ ลบถาวร?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
+window.deleteCase = async (docId) => { if(confirm('⚠️ Permanently delete?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
 
 if(admitForm) {
     admitForm.addEventListener('submit', async (e) => {
@@ -606,11 +606,11 @@ window.openEditModal = (id) => {
     document.getElementById('hn').value = pt.hn || ""; document.getElementById('an').value = pt.an || ""; document.getElementById('name').value = pt.name || "";
     document.getElementById('age').value = pt.age || ""; document.getElementById('gender').value = pt.gender || ""; document.getElementById('diag').value = pt.diag || "";
     document.getElementById('owner').value = pt.owner || ""; document.getElementById('note').value = pt.note || "";
-    document.getElementById('modal-title').innerText = "แก้ไขข้อมูลผู้ป่วย";
+    document.getElementById('modal-title').innerText = "Edit Pt Info";
     modal.style.display = 'block';
 }
 
-if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "รับเคสใหม่"; modal.style.display = 'block'; };
+if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "New case"; modal.style.display = 'block'; };
 if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
 if(openCreateUserBtn) openCreateUserBtn.onclick = () => { 
     document.getElementById('create-user-form').reset(); 
