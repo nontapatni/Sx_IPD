@@ -10,67 +10,83 @@
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>🏥 Sx IPD Ward Manager</h1>
-            <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
-        </header>
+    <!-- 🔒 LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo"><i class="fas fa-hospital-user"></i></div>
+            <h2>Sx IPD Login</h2>
+            <p>กรุณากรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
+            <form id="login-form">
+                <input type="password" id="login-password" class="login-input" placeholder="Enter Ward Passcode" required>
+                <button type="submit" class="btn-login">เข้าสู่ระบบ (Login)</button>
+                <div id="login-error" class="login-error">รหัสผ่านไม่ถูกต้อง!</div>
+            </form>
+        </div>
+    </div>
 
-        <!-- Control Bar (แบบเดิม) -->
-        <div class="controls-bar">
-            <button id="add-btn" class="btn btn-primary">
-                <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
-            </button>
-            <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+    <!-- 🏥 MAIN APP (ซ่อนไว้จนกว่าจะ Login) -->
+    <div id="app-container">
+        <div class="container">
+            <header>
+                <h1>🏥 Sx IPD Ward Manager</h1>
+                <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+            </header>
+
+            <div class="controls-bar">
+                <button id="add-btn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> รับเคสใหม่ (Admit)
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
+                </div>
             </div>
-        </div>
 
-        <!-- ตารางที่ 1: Active Cases -->
-        <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
-        <div class="card">
-            <table id="active-table">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Ward</th>
-                        <th style="width: 60px;">Bed</th>
-                        <th>Date</th>
-                        <th>HN / AN</th>
-                        <th>Patient Info</th>
-                        <th>Diagnosis</th>
-                        <th>Owner</th>
-                        <th>Note</th>
-                        <th style="width: 120px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="patient-list">
-                    <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
-                </tbody>
-            </table>
-        </div>
+            <!-- ตารางที่ 1: Active Cases -->
+            <div class="section-header"><i class="fas fa-procedures"></i> Active Cases (ผู้ป่วยปัจจุบัน)</div>
+            <div class="card">
+                <table id="active-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Ward</th>
+                            <th style="width: 60px;">Bed</th>
+                            <th>Date</th>
+                            <th>HN / AN</th>
+                            <th>Patient Info</th>
+                            <th>Diagnosis</th>
+                            <th>Owner</th>
+                            <th>Note</th>
+                            <th style="width: 120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-list">
+                        <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- ตารางที่ 2: Discharged Cases -->
-        <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
-        <div class="card">
-            <table id="discharged-table">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Ward</th>
-                        <th style="width: 60px;">Bed</th>
-                        <th>Date</th>
-                        <th>HN / AN</th>
-                        <th>Patient Info</th>
-                        <th>Diagnosis</th>
-                        <th>Owner</th>
-                        <th>Note</th>
-                        <th style="width: 80px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="discharged-list">
-                    <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
-                </tbody>
-            </table>
+            <!-- ตารางที่ 2: Discharged Cases -->
+            <div class="section-header"><i class="fas fa-history"></i> Discharged History (จำหน่ายแล้ว)</div>
+            <div class="card">
+                <table id="discharged-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Ward</th>
+                            <th style="width: 60px;">Bed</th>
+                            <th>Date</th>
+                            <th>HN / AN</th>
+                            <th>Patient Info</th>
+                            <th>Diagnosis</th>
+                            <th>Owner</th>
+                            <th>Note</th>
+                            <th style="width: 80px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discharged-list">
+                        <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -167,15 +183,6 @@
         </div>
     </div>
 
-    <!-- Script Check Loading -->
-    <script>
-        setTimeout(function() {
-            const tableBody = document.getElementById('patient-list');
-            if (tableBody.innerHTML.includes('Loading data...')) {
-                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #c0392b;">⚠️ โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ Live Server / Console)</td></tr>`;
-            }
-        }, 4000);
-    </script>
     <script type="module" src="script.js"></script>
 </body>
 </html>

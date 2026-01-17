@@ -17,7 +17,33 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
 
-// Elements
+// --- LOGIN LOGIC ---
+const loginForm = document.getElementById('login-form');
+const loginScreen = document.getElementById('login-screen');
+const appContainer = document.getElementById('app-container');
+const loginError = document.getElementById('login-error');
+
+// ตั้งรหัสผ่านกลาง (Ward Passcode)
+const WARD_PASSCODE = "1234"; 
+
+loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputPass = document.getElementById('login-password').value;
+
+    if (inputPass === WARD_PASSCODE) {
+        // ถ้ารหัสถูกต้อง
+        loginScreen.style.display = 'none'; // ซ่อนหน้า Login
+        appContainer.style.display = 'block'; // แสดงหน้า App
+        initApp(); // เริ่มโหลดข้อมูล Firebase
+    } else {
+        // ถ้ารหัสผิด
+        loginError.style.display = 'block';
+        loginError.classList.add('shake'); // (Optional) เพิ่ม Animation สั่นๆ ได้ถ้ามี CSS
+        document.getElementById('login-password').value = '';
+    }
+});
+
+// Elements อื่นๆ
 const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
 const addBtn = document.getElementById('add-btn');
@@ -35,35 +61,39 @@ if(document.getElementById('admitDate')) {
 }
 
 // ------------------------------------------------------------------
-// 1. Real-time Listener
+// 1. Real-time Listener (ย้ายเข้ามาในฟังก์ชัน initApp)
 // ------------------------------------------------------------------
-const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
+function initApp() {
+    console.log("Login Success. Starting Firebase Listener...");
+    
+    // เรียงตาม Ward
+    const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
 
-onSnapshot(q, (querySnapshot) => {
-    allPatientsData = [];
-    querySnapshot.forEach((docSnap) => {
-        allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
+    onSnapshot(q, (querySnapshot) => {
+        allPatientsData = [];
+        querySnapshot.forEach((docSnap) => {
+            allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderPatients(allPatientsData);
+    }, (error) => {
+        console.error("Error:", error);
+        const errorMsg = `
+            <tr>
+                <td colspan="9" style="text-align:center; color: #c0392b; padding: 20px;">
+                    <strong>⚠️ เกิดข้อผิดพลาด:</strong> ${error.message}
+                </td>
+            </tr>`;
+        patientList.innerHTML = errorMsg;
+        dischargedList.innerHTML = errorMsg;
     });
-    renderPatients(allPatientsData); // เรียก render ปกติ (ไม่ต้องผ่าน Sort logic)
-}, (error) => {
-    console.error("Error:", error);
-    const errorMsg = `
-        <tr>
-            <td colspan="9" style="text-align:center; color: #c0392b; padding: 20px;">
-                <strong>⚠️ เกิดข้อผิดพลาด:</strong> ${error.message}
-            </td>
-        </tr>`;
-    patientList.innerHTML = errorMsg;
-    dischargedList.innerHTML = errorMsg;
-});
+}
 
 // ------------------------------------------------------------------
-// 2. Render & Search Logic (กลับไปแบบเดิม)
+// 2. Render & Search Logic
 // ------------------------------------------------------------------
 function renderPatients(data) {
     const keyword = searchInput.value.toLowerCase().trim();
     
-    // กรองข้อมูลตาม Search อย่างเดียว
     const filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
@@ -124,7 +154,6 @@ function createRow(pt, isActive) {
         `;
     }
 
-    // ตัด data-label ออก กลับไปใช้ตารางปกติ
     row.innerHTML = `
         <td><strong>${pt.ward || '-'}</strong></td>
         <td><div style="font-size:1.1em;">${pt.bed || '?'}</div></td>
