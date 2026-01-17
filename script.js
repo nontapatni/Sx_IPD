@@ -37,6 +37,18 @@ const EMAIL_DOMAIN = "@ward.local";
 onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Logged in as:", user.email);
+        
+        // --- ADMIN CHECK (เพิ่มส่วนนี้) ---
+        // ตรวจสอบว่าเป็น admin หรือไม่ (username: admin -> email: admin@ward.local)
+        const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
+        const addStaffBtn = document.getElementById('open-create-user-btn');
+        
+        if (addStaffBtn) {
+            // ถ้าเป็น admin ให้แสดงปุ่ม (flex ตาม class btn-sm), ถ้าไม่ใช่ให้ซ่อน
+            addStaffBtn.style.display = isAdmin ? 'flex' : 'none';
+        }
+        // --------------------------------
+
         authScreen.style.display = 'none';
         appContainer.style.display = 'block';
         initApp(); 
