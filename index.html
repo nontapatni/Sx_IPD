@@ -35,20 +35,20 @@
     <!-- 🏥 MAIN APP -->
     <div id="app-container">
         <div class="container">
-            <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <!-- ✅ เปลี่ยน Header ใช้ Class แทน Inline Style -->
+            <header class="main-header">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
+                    <p></p>
                 </div>
                 
-                <!-- ✅ ปรับ Layout ขวาบน: แยกบรรทัด User Info กับ ปุ่ม -->
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                <div class="header-user-section">
                     
                     <!-- บรรทัดที่ 1: ชื่อผู้ใช้ -->
-                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600;"></div>
+                    <div id="user-info"></div>
 
                     <!-- บรรทัดที่ 2: กลุ่มปุ่มต่างๆ -->
-                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                    <div class="header-btn-group">
                         <!-- ปุ่ม Dark Mode -->
                         <button id="toggle-dark-mode" class="btn-sm" style="background-color: #555; color: white; padding: 8px 12px; font-size: 14px;" title="Dark Mode">
                             <i class="fas fa-moon"></i>

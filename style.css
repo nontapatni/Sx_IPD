@@ -429,3 +429,65 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 body.dark-mode ::-webkit-scrollbar-thumb:hover {
     background: #777; 
 }
+
+/* --- HEADER LAYOUT (New Classes) --- */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.header-user-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    /* สำคัญ: บนจอใหญ่ให้ชิดขวาด้วย auto margin */
+    margin-left: auto; 
+}
+
+#user-info {
+    font-size: 14px; 
+    color: #555; 
+    font-weight: 600;
+}
+
+.header-btn-group {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* ✅ Mobile Adjustment: บังคับชิดขวาบนมือถือ */
+@media (max-width: 600px) {
+    .main-header {
+        flex-direction: column;
+        align-items: stretch; /* ยืดให้เต็มความกว้าง */
+    }
+    
+    .header-user-section {
+        width: 100%;
+        align-items: flex-end; /* บังคับชิดขวา */
+        margin-top: 5px;
+    }
+
+    .header-btn-group {
+        width: 100%;
+        justify-content: flex-end; /* บังคับปุ่มเรียงชิดขวา */
+    }
+
+    /* ปรับ Title ให้อยู่กลางบนมือถือเพื่อให้สมดุล (Optional) */
+    .main-header > div:first-child {
+        text-align: center;
+        width: 100%;
+    }
+    
+    .controls-bar { flex-direction: column; align-items: stretch; }
+    .controls-right { flex-direction: column; width: 100%; }
+    .search-box, .sort-box, .sort-box select { width: 100%; }
+}
