@@ -72,19 +72,20 @@ body {
 
 .login-input {
     width: 100%;
-    padding: 12px 15px;
+    padding: 10px 15px;
     margin-bottom: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 16px;
     font-family: 'Sarabun', sans-serif;
     outline: none;
+    height: 45px; /* ล็อกความสูงช่อง Login */
 }
 .login-input:focus { border-color: #3498db; }
 
 .btn-login {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     background-color: #3498db;
     color: white;
     border: none;
@@ -93,6 +94,7 @@ body {
     cursor: pointer;
     font-family: 'Sarabun', sans-serif;
     margin-top: 10px;
+    height: 45px; /* ล็อกความสูงปุ่ม Login */
 }
 .btn-login:hover { background-color: #2980b9; }
 
@@ -121,44 +123,82 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     flex-wrap: wrap;
 }
 
-/* เพิ่มสไตล์สำหรับปุ่ม Export ด้านล่าง (ถ้าต้องการปรับแต่งพิเศษ) */
-#export-patient-btn {
-    min-width: 150px;
-}
+/* --- Search Box & Sort Box (ปรับให้สูงเท่ากันเป๊ะ) --- */
 
 /* Search Box */
 .search-box { position: relative; width: 250px; }
 .search-box input {
     width: 100%;
-    padding: 10px 10px 10px 35px;
+    height: 38px; /* Height Fixed */
+    padding: 0 10px 0 35px; /* ใช้ padding ซ้ายขวาเท่านั้น */
     border: 1px solid #ccc;
     border-radius: 20px;
     outline: none;
     font-family: 'Sarabun', sans-serif;
+    line-height: 38px; /* จัดกึ่งกลางแนวตั้ง */
 }
-.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
+.search-icon { 
+    position: absolute; 
+    left: 12px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    color: #888; 
+}
 
-/* Sort Box */
-.sort-box { position: relative; min-width: 180px; }
+/* Sort Box (แก้ใหม่ทั้งหมด) */
+.sort-box { 
+    position: relative; 
+    min-width: 200px; 
+}
+
 .sort-box select {
     width: 100%;
-    padding: 10px 35px 10px 35px;
+    height: 38px; /* Height Fixed ให้เท่า Search */
+    /* Padding: บนล่าง 0, ขวา 30px (เผื่อลูกศร), ซ้าย 35px (เผื่อไอคอน) */
+    padding: 0 30px 0 35px; 
     border: 1px solid #ccc;
     border-radius: 20px;
     outline: none;
     font-family: 'Sarabun', sans-serif;
     cursor: pointer;
-    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 15px center;
-    background-size: 10px;
+    background-color: white;
+    font-size: 14px;
+    line-height: 38px; /* จัดกึ่งกลางแนวตั้ง */
+    
+    /* ล้างค่า Default ของ Browser ออก */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
 }
-.sort-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 12px; pointer-events: none;}
+
+/* สร้างลูกศรชี้ลงเอง (ขวาสุด) */
+.sort-box::after {
+    content: '▼';
+    font-size: 10px;
+    color: #888;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* กดทะลุได้ */
+}
+
+/* ไอคอน Sort (ซ้ายสุด) */
+.sort-icon { 
+    position: absolute; 
+    left: 12px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    color: #888; 
+    font-size: 12px; 
+    pointer-events: none;
+    display: block; /* แสดงผล */
+}
 
 /* Buttons */
 .btn {
-    padding: 10px 20px;
+    height: 38px; /* Height Fixed */
+    padding: 0 20px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -166,10 +206,11 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     font-family: 'Sarabun', sans-serif;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
 }
 .btn-primary { background-color: #3498db; color: white; }
-.btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
+.btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; height: 45px; }
 
 /* Add User Button */
 .btn-add-user { background-color: #9b59b6; color: white; }
@@ -183,7 +224,8 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     align-items: center;
 }
 .btn-sm {
-    padding: 4px 8px;
+    height: 28px;
+    padding: 0 10px;
     font-size: 12px;
     border-radius: 4px;
     color: white;
@@ -191,6 +233,7 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     border: none;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 3px;
     white-space: nowrap;
 }
@@ -218,7 +261,7 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
 }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
 th, td { 
-    padding: 8px 10px; 
+    padding: 10px; 
     text-align: left; 
     border-bottom: 1px solid #ddd; 
     vertical-align: middle; 
@@ -249,14 +292,28 @@ th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowr
 .close-btn { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
-.form-group input, .form-group select, .form-group textarea {
+
+/* Form Inputs (ใน Modal) - ปรับ Font Size */
+.form-group input, .form-group select {
+    width: 100%;
+    height: 40px; /* Height Fixed */
+    padding: 0 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 16px; /* เพิ่มขนาดตัวอักษรให้อ่านง่าย */
+}
+.form-group textarea {
     width: 100%;
     padding: 8px 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
     font-family: 'Sarabun', sans-serif;
+    font-size: 16px; /* เพิ่มขนาดตัวอักษรให้อ่านง่าย */
 }
+
 .form-row { display: flex; gap: 15px; }
 .text-muted { color: #666; font-size: 0.85em; }
 .text-orange { color: #e67e22; }
