@@ -184,7 +184,6 @@ function loadDropdownSettings() {
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
-            // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
             data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
@@ -241,6 +240,7 @@ const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
 const myPatientsList = document.getElementById('mypatients-list'); 
 const myPatientsDischargedList = document.getElementById('mypatients-discharged-list');
+const newCasesList = document.getElementById('new-cases-list'); // ✅ Table New Cases
 const dutyList = document.getElementById('duty-list');
 
 const addBtn = document.getElementById('add-btn');
@@ -343,15 +343,43 @@ function renderPatients(data) {
 
     patientList.innerHTML = '';
     dischargedList.innerHTML = '';
+    if(newCasesList) newCasesList.innerHTML = ''; // ✅ Clear New Cases
     
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
-    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
-    else activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
+    // --- Active Cases ---
+    if (activeCases.length === 0) {
+        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
+    } else {
+        activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
+    }
 
-    if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
-    else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
+    // --- Discharged Cases ---
+    if (dischargedCases.length === 0) {
+        dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
+    } else {
+        dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
+    }
+
+    // --- ✅ New Cases (Last 24h) ---
+    if (newCasesList) {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+        const recentCases = activeCases.filter(pt => {
+            if (!pt.createdAt) return false;
+            // Handle Firestore Timestamp
+            const createdDate = pt.createdAt.toDate ? pt.createdAt.toDate() : new Date(pt.createdAt.seconds * 1000);
+            return createdDate >= oneDayAgo;
+        });
+
+        if (recentCases.length === 0) {
+            newCasesList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>';
+        } else {
+            recentCases.forEach(pt => newCasesList.appendChild(createPatientRow(pt, true)));
+        }
+    }
 }
 
 // --- RENDER MY PATIENTS ---
@@ -439,7 +467,7 @@ function createPatientRow(pt, isActive) {
 function renderSchedule(duties) {
     if(!dutyList) return;
     dutyList.innerHTML = '';
-    if (duties.length === 0) { dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>'; return; }
+    if (duties.length === 0) { dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Loading schedule...</td></tr>'; return; }
 
     duties.forEach(duty => {
         const row = document.createElement('tr');

@@ -66,7 +66,6 @@
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> All Patients
                 </button>
-                <!-- เพิ่ม ID ให้ปุ่มนี้เพื่อซ่อน/แสดง -->
                 <button id="tab-mypatients" class="tab-btn" onclick="window.switchTab('mypatients')">
                     <i class="fas fa-user-md"></i> My Patients
                 </button>
@@ -83,8 +82,6 @@
                     </button>
 
                     <div class="controls-right">
-                        <!-- ย้ายปุ่ม Export ออกไปไว้ข้างล่าง -->
-
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
@@ -99,6 +96,31 @@
                             <input type="text" id="searchInput" placeholder="Find HN, Ward, Name">
                         </div>
                     </div>
+                </div>
+
+                <!-- ✨ NEW CASES (LAST 24H) - เพิ่มส่วนนี้ -->
+                <div class="section-header" style="color: #d35400;">
+                    <i class="fas fa-clock"></i> New Cases (Last 24 Hours)
+                </div>
+                <div class="card" style="border-left: 4px solid #d35400;">
+                    <table id="new-cases-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Ward</th>
+                                <th style="width: 50px;">Bed</th>
+                                <th style="width: 90px;">Date of Admission</th>
+                                <th style="width: 150px;">HN / AN</th>
+                                <th>Patient Info</th>
+                                <th>Diagnosis</th>
+                                <th style="width: 100px;">Owner</th>
+                                <th>Note</th>
+                                <th style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="new-cases-list">
+                            <tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- Active Cases -->
@@ -147,7 +169,6 @@
                     </table>
                 </div>
 
-                <!-- ✅ ย้ายปุ่ม Export มาไว้ด้านล่างสุดของหน้านี้ -->
                 <div style="text-align: right; margin-top: 20px; padding-bottom: 20px;">
                     <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
                         <i class="fas fa-file-excel"></i> Export All to Excel
@@ -157,7 +178,6 @@
 
             <!-- ================= PAGE 2: MY PATIENTS ================= -->
             <div id="mypatients-view" style="display: none;">
-                <!-- ส่วนที่ 1: Active -->
                 <div class="section-header" style="color: #2980b9;">
                     <i class="fas fa-user-md"></i> My Active Cases
                 </div>
@@ -182,7 +202,6 @@
                     </table>
                 </div>
 
-                <!-- ส่วนที่ 2: Discharged (เพิ่มใหม่) -->
                 <div class="section-header" style="color: #7f8c8d; margin-top: 30px;">
                     <i class="fas fa-history"></i> My Discharged History
                 </div>
