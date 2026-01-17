@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+// เพิ่ม setDoc มาใช้เก็บข้อมูล User
+import { getFirestore, collection, addDoc, setDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyClYDNeWk_yEm0WWe65qm4F7iBGStE6-KI",
@@ -13,60 +14,57 @@ const firebaseConfig = {
     measurementId: "G-VKXGJ4M03C"
 };
 
-// --- MAIN APP INSTANCE ---
+// --- APP INSTANCES ---
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
 const SCHEDULE_COLLECTION = "schedules";
+const USERS_COLLECTION = "users"; // New Collection for storing user list
 
-// --- SECONDARY APP INSTANCE (สำหรับสร้าง User โดยไม่ logout admin) ---
+// Secondary app for creating users without logging out
 const secondaryApp = initializeApp(firebaseConfig, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
 
-// --- AUTH LOGIC ---
+// --- AUTH VARIABLES ---
 const authScreen = document.getElementById('auth-screen');
 const appContainer = document.getElementById('app-container');
 const authError = document.getElementById('auth-error');
 const loginForm = document.getElementById('login-form');
-
-// Domain ปลอมเพื่อหลอก Firebase ว่าเป็น Email
 const EMAIL_DOMAIN = "@ward.local"; 
 
+let currentUser = null;
+
+// --- AUTH STATE LISTENER ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        console.log("Logged in as:", user.email);
+        currentUser = user;
+        console.log("Logged in:", user.email);
         
-        // --- ADMIN CHECK (เพิ่มส่วนนี้) ---
-        // ตรวจสอบว่าเป็น admin หรือไม่ (username: admin -> email: admin@ward.local)
+        // Check Admin
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
-        const addStaffBtn = document.getElementById('open-create-user-btn');
+        const tabUsers = document.getElementById('tab-users');
         
-        if (addStaffBtn) {
-            // ถ้าเป็น admin ให้แสดงปุ่ม (flex ตาม class btn-sm), ถ้าไม่ใช่ให้ซ่อน
-            addStaffBtn.style.display = isAdmin ? 'flex' : 'none';
-        }
-        // --------------------------------
+        if (tabUsers) tabUsers.style.display = isAdmin ? 'block' : 'none';
 
         authScreen.style.display = 'none';
         appContainer.style.display = 'block';
-        initApp(); 
+        initApp(isAdmin); 
     } else {
-        console.log("No user logged in");
+        currentUser = null;
+        console.log("No user");
         authScreen.style.display = 'flex';
         appContainer.style.display = 'none';
     }
 });
 
-// LOGIN Handler
+// LOGIN
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
     authError.style.display = 'none';
-
-    // แปลง Username เป็น Email ปลอม
     const fakeEmail = username + EMAIL_DOMAIN;
 
     try {
@@ -78,9 +76,8 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
-// CREATE USER Handler (Admin สร้างให้)
+// CREATE USER (ADMIN ONLY)
 const createUserForm = document.getElementById('create-user-form');
-const createUserModal = document.getElementById('create-user-modal');
 const createUserMsg = document.getElementById('create-user-msg');
 
 if (createUserForm) {
@@ -94,16 +91,21 @@ if (createUserForm) {
         createUserMsg.innerText = "กำลังสร้างบัญชี...";
 
         try {
-            // ใช้ secondaryAuth เพื่อไม่ให้ Admin หลุด
+            // 1. Create Auth User (via secondary app)
             await createUserWithEmailAndPassword(secondaryAuth, newFakeEmail, newPassword);
-            
-            // Sign out จาก secondary auth ทันทีเพื่อความปลอดภัย (แต่ไม่กระทบ Main auth)
             await signOut(secondaryAuth);
+
+            // 2. Save User Info to Firestore (for listing)
+            await setDoc(doc(db, USERS_COLLECTION, newUsername), {
+                username: newUsername,
+                email: newFakeEmail,
+                role: 'staff',
+                createdAt: serverTimestamp()
+            });
 
             createUserMsg.style.color = "green";
             createUserMsg.innerText = `สร้างบัญชี "${newUsername}" สำเร็จ!`;
             
-            // Reset Form & Close Modal after delay
             setTimeout(() => {
                 createUserForm.reset();
                 createUserMsg.innerText = "";
@@ -118,14 +120,33 @@ if (createUserForm) {
     });
 }
 
-// LOGOUT Function
+// CHANGE PASSWORD (SELF)
+const changePassForm = document.getElementById('change-password-form');
+if (changePassForm) {
+    changePassForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPass = document.getElementById('new-self-password').value;
+        try {
+            await updatePassword(auth.currentUser, newPass);
+            alert("เปลี่ยนรหัสผ่านสำเร็จ!");
+            window.closeModal('change-password-modal');
+            changePassForm.reset();
+        } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + getErrorMessage(error.code));
+            // ถ้าติด Re-auth อาจต้องให้ Login ใหม่
+            if (error.code === 'auth/requires-recent-login') {
+                alert("เพื่อความปลอดภัย กรุณาล็อกอินใหม่แล้วทำรายการอีกครั้ง");
+                window.logout();
+            }
+        }
+    });
+}
+
+// LOGOUT
 window.logout = async () => {
     if(confirm('ต้องการออกจากระบบหรือไม่?')) {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            alert("Error logging out: " + error.message);
-        }
+        try { await signOut(auth); } 
+        catch (error) { alert("Error: " + error.message); }
     }
 }
 
@@ -136,8 +157,7 @@ function getErrorMessage(code) {
         case 'auth/wrong-password': return "รหัสผ่านไม่ถูกต้อง";
         case 'auth/email-already-in-use': return "ชื่อผู้ใช้นี้มีคนใช้แล้ว";
         case 'auth/weak-password': return "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
-        case 'auth/invalid-credential': return "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-        default: return "เกิดข้อผิดพลาด: " + code;
+        default: return "Error: " + code;
     }
 }
 
@@ -145,6 +165,8 @@ function getErrorMessage(code) {
 const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
 const dutyList = document.getElementById('duty-list');
+const usersList = document.getElementById('users-list'); // Table List
+
 const addBtn = document.getElementById('add-btn');
 const modal = document.getElementById('modal');
 const admitForm = document.getElementById('admit-form');
@@ -174,27 +196,25 @@ if(document.getElementById('duty-date')) document.getElementById('duty-date').va
 window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
-    if (tabName === 'patients') {
-        document.getElementById('patients-view').style.display = 'block';
-        document.getElementById('schedule-view').style.display = 'none';
-    } else {
-        document.getElementById('patients-view').style.display = 'none';
-        document.getElementById('schedule-view').style.display = 'block';
-    }
+    
+    document.getElementById('patients-view').style.display = 'none';
+    document.getElementById('schedule-view').style.display = 'none';
+    document.getElementById('manage-users-view').style.display = 'none';
+
+    if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
+    else if (tabName === 'schedule') document.getElementById('schedule-view').style.display = 'block';
+    else if (tabName === 'users') document.getElementById('manage-users-view').style.display = 'block';
 }
 
-window.closeModal = (modalId) => {
-    document.getElementById(modalId).style.display = 'none';
-}
+window.closeModal = (modalId) => document.getElementById(modalId).style.display = 'none';
+window.openChangePasswordModal = () => document.getElementById('change-password-modal').style.display = 'block';
 
-function initApp() {
+function initApp(isAdmin) {
     // 1. Patients Listener
     const qPatients = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
     onSnapshot(qPatients, (querySnapshot) => {
         allPatientsData = [];
-        querySnapshot.forEach((docSnap) => {
-            allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
-        });
+        querySnapshot.forEach((docSnap) => allPatientsData.push({ id: docSnap.id, ...docSnap.data() }));
         renderPatients(allPatientsData);
     });
 
@@ -210,8 +230,43 @@ function initApp() {
         });
         renderSchedule(duties);
     });
+
+    // 3. Users Listener (Admin Only)
+    if (isAdmin) {
+        const qUsers = query(collection(db, USERS_COLLECTION));
+        onSnapshot(qUsers, (snapshot) => {
+            usersList.innerHTML = '';
+            if (snapshot.empty) {
+                usersList.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีผู้ใช้งาน (นอกจาก Admin)</td></tr>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                const row = document.createElement('tr');
+                // ห้ามลบ Admin
+                const deleteBtn = user.username === 'admin' ? '-' : 
+                    `<button class="btn-sm btn-delete" onclick="window.deleteUser('${doc.id}')"><i class="fas fa-trash"></i> ลบ</button>`;
+                
+                row.innerHTML = `
+                    <td><strong>${user.username}</strong></td>
+                    <td>${user.role || 'staff'}</td>
+                    <td>${user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('th-TH') : '-'}</td>
+                    <td>${deleteBtn}</td>
+                `;
+                usersList.appendChild(row);
+            });
+        });
+    }
 }
 
+// Delete User from List (Note: Doesn't delete Auth account directly)
+window.deleteUser = async (docId) => {
+    if(confirm(`⚠️ ยืนยันการลบผู้ใช้ "${docId}" ออกจากรายชื่อ? \n(การกระทำนี้จะลบสิทธิ์การแสดงผล แต่ไม่ได้ลบบัญชี Auth จริง หากต้องการลบถาวรต้องแจ้ง Admin ระบบ)`)) {
+        await deleteDoc(doc(db, USERS_COLLECTION, docId));
+    }
+}
+
+// --- RENDERING FUNCTIONS (เหมือนเดิม) ---
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
@@ -248,8 +303,7 @@ if(exportBtn) {
     exportBtn.onclick = () => {
         if (allPatientsData.length === 0) { alert("ไม่มีข้อมูลให้ Export"); return; }
         const exportData = allPatientsData.map(pt => ({
-            Status: pt.status || 'Active',
-            Ward: pt.ward, Bed: pt.bed, Date: pt.date, HN: pt.hn, AN: pt.an, Name: pt.name, Age: pt.age, Gender: pt.gender, Diagnosis: pt.diag, Owner: pt.owner, Note: pt.note,
+            Status: pt.status || 'Active', Ward: pt.ward, Bed: pt.bed, Date: pt.date, HN: pt.hn, AN: pt.an, Name: pt.name, Age: pt.age, Gender: pt.gender, Diagnosis: pt.diag, Owner: pt.owner, Note: pt.note,
             Created_At: pt.createdAt ? new Date(pt.createdAt.seconds * 1000).toLocaleString() : '-',
             Updated_At: pt.updatedAt ? new Date(pt.updatedAt.seconds * 1000).toLocaleString() : '-'
         }));
@@ -347,6 +401,15 @@ if(dutyForm) {
     });
 }
 
+if(addDutyBtn) {
+    addDutyBtn.onclick = () => { 
+        dutyForm.reset(); 
+        editingDutyId = null;
+        document.getElementById('duty-date').valueAsDate = new Date();
+        dutyModal.style.display = 'block'; 
+    };
+}
+
 if (importExcelBtn && excelInput) {
     importExcelBtn.onclick = () => excelInput.click();
     excelInput.addEventListener('change', async (e) => {
@@ -375,11 +438,9 @@ if (importExcelBtn && excelInput) {
 
                     let dateStr = "";
                     const rawDate = row[dateKey];
-                    if (rawDate instanceof Date) {
-                        dateStr = rawDate.toISOString().split('T')[0];
-                    } else if (typeof rawDate === 'string') {
-                        dateStr = rawDate.trim();
-                    } else if (typeof rawDate === 'number') {
+                    if (rawDate instanceof Date) dateStr = rawDate.toISOString().split('T')[0];
+                    else if (typeof rawDate === 'string') dateStr = rawDate.trim();
+                    else if (typeof rawDate === 'number') {
                          const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000);
                          dateStr = jsDate.toISOString().split('T')[0];
                     }
@@ -441,11 +502,11 @@ window.openEditModal = (id) => {
 }
 
 if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "รับเคสใหม่"; modal.style.display = 'block'; };
-if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
 if(openCreateUserBtn) openCreateUserBtn.onclick = () => { document.getElementById('create-user-form').reset(); document.getElementById('create-user-msg').innerText = ""; document.getElementById('create-user-modal').style.display = 'block'; };
 
 window.onclick = (e) => {
     if (e.target == modal) window.closeModal('modal');
     if (e.target == dutyModal) window.closeModal('duty-modal');
     if (e.target == document.getElementById('create-user-modal')) window.closeModal('create-user-modal');
+    if (e.target == document.getElementById('change-password-modal')) window.closeModal('change-password-modal');
 }

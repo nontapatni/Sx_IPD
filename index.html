@@ -18,10 +18,8 @@
             <h2 id="auth-title">เข้าสู่ระบบ (Login)</h2>
             <p id="auth-subtitle">ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม</p>
             
-            <!-- FORM: LOGIN (Username Only) -->
             <form id="login-form">
                 <div class="form-group">
-                    <!-- เปลี่ยน type="email" เป็น text และ placeholder -->
                     <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้ (Username)" required>
                 </div>
                 <div class="form-group">
@@ -43,13 +41,11 @@
                     <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
-                <!-- Header Buttons -->
                 <div style="display: flex; gap: 10px;">
-                    <!-- ปุ่มเพิ่ม User ใหม่ (Admin Only - ซ่อนไว้เป็น default) -->
-                    <button id="open-create-user-btn" class="btn-sm" style="display: none; background-color: #8e44ad; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ (Add Staff)
+                    <!-- ปุ่มเปลี่ยนรหัสผ่านตัวเอง -->
+                    <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
                     </button>
-                    <!-- ปุ่ม Logout -->
                     <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -63,6 +59,10 @@
                 </button>
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
                     <i class="fas fa-calendar-alt"></i> ตารางเวร (Duty Schedule)
+                </button>
+                <!-- Tab สำหรับ Admin -->
+                <button id="tab-users" class="tab-btn" style="display:none;" onclick="window.switchTab('users')">
+                    <i class="fas fa-users-cog"></i> จัดการผู้ใช้ (Users)
                 </button>
             </div>
 
@@ -173,6 +173,35 @@
                 </div>
             </div>
 
+            <!-- ================= PAGE 3: MANAGE USERS (ADMIN) ================= -->
+            <div id="manage-users-view" style="display: none;">
+                <div class="controls-bar">
+                    <button id="open-create-user-btn" class="btn btn-primary" style="background-color: #8e44ad;">
+                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ (Add Staff)
+                    </button>
+                </div>
+
+                <div class="section-header"><i class="fas fa-users-cog"></i> รายชื่อผู้ใช้งาน (User List)</div>
+                <div class="card">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Created At</th>
+                                <th style="width: 150px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list">
+                            <tr><td colspan="4" style="text-align:center;">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    * หมายเหตุ: หากต้องการเปลี่ยนรหัสผ่านให้ User อื่น ให้ทำการ <strong>"ลบ"</strong> และ <strong>"สร้างใหม่"</strong>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -183,7 +212,6 @@
             <h2 id="modal-title">รับเคสใหม่</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
-                
                 <div class="form-row">
                     <div class="form-group" style="flex: 1.5;">
                         <label>Ward</label>
@@ -206,7 +234,6 @@
                         <input type="date" id="admitDate">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>HN</label>
@@ -217,12 +244,10 @@
                         <input type="text" id="an" placeholder="66xxxxxx">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>ชื่อ-สกุล</label>
                     <input type="text" id="name">
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>อายุ</label>
@@ -237,12 +262,10 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Diagnosis</label>
                     <input type="text" id="diag" placeholder="เช่น Acute Appendicitis">
                 </div>
-
                 <div class="form-group">
                     <label>Owner</label>
                     <select id="owner">
@@ -258,12 +281,10 @@
                         </optgroup>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Note</label>
                     <textarea id="note" rows="2"></textarea>
                 </div>
-
                 <button type="submit" id="submit-btn" class="btn btn-submit">บันทึกข้อมูล</button>
             </form>
         </div>
@@ -292,7 +313,7 @@
         </div>
     </div>
 
-    <!-- Modal 3: Create User (New) -->
+    <!-- Modal 3: Create User -->
     <div id="create-user-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('create-user-modal')">&times;</span>
@@ -302,7 +323,7 @@
             <form id="create-user-form">
                 <div class="form-group">
                     <label>Username (ชื่อผู้ใช้)</label>
-                    <input type="text" id="new-username" placeholder="เช่น somchai, nurse1, extern_a" required pattern="[a-zA-Z0-9_]+" title="ภาษาอังกฤษ ตัวเลข หรือ _ เท่านั้น">
+                    <input type="text" id="new-username" placeholder="เช่น somchai, nurse1" required pattern="[a-zA-Z0-9_]+" title="ภาษาอังกฤษ ตัวเลข หรือ _ เท่านั้น">
                 </div>
                 <div class="form-group">
                     <label>Password (รหัสผ่าน)</label>
@@ -310,6 +331,21 @@
                 </div>
                 <button type="submit" class="btn btn-submit" style="background-color: #8e44ad;">สร้างบัญชี</button>
                 <div id="create-user-msg" style="margin-top:10px; font-size:0.9em;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Change Password (Self) -->
+    <div id="change-password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('change-password-modal')">&times;</span>
+            <h2><i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน</h2>
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label>รหัสผ่านใหม่ (New Password)</label>
+                    <input type="password" id="new-self-password" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-submit" style="background-color: #f39c12;">บันทึกรหัสผ่านใหม่</button>
             </form>
         </div>
     </div>

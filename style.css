@@ -42,8 +42,8 @@ body {
     color: white;
 }
 
-/* --- AUTH SCREEN --- */
-#auth-screen {
+/* --- LOGIN SCREEN --- */
+#login-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -167,10 +167,15 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
 .btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
 
 /* Table Actions */
-.action-buttons { display: flex; gap: 5px; }
+.action-buttons { 
+    display: flex; 
+    gap: 4px; 
+    flex-wrap: nowrap; 
+    align-items: center;
+}
 .btn-sm {
-    padding: 5px 10px;
-    font-size: 13px;
+    padding: 4px 8px;
+    font-size: 12px;
     border-radius: 4px;
     color: white;
     cursor: pointer;
@@ -178,6 +183,7 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     display: flex;
     align-items: center;
     gap: 3px;
+    white-space: nowrap;
 }
 .btn-edit { background-color: #f39c12; }
 .btn-dc { background-color: #27ae60; }
@@ -202,7 +208,12 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     font-weight: 600;
 }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 900px; }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+th, td { 
+    padding: 8px 10px; 
+    text-align: left; 
+    border-bottom: 1px solid #ddd; 
+    vertical-align: middle; 
+}
 th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
 
 /* Modal */
