@@ -347,10 +347,10 @@ function renderPatients(data) {
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
-    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่พบข้อมูล</td></tr>';
+    if (activeCases.length === 0) patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">Data not found/td></tr>';
     else activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
 
-    if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>';
+    if (dischargedCases.length === 0) dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
 }
 
@@ -377,7 +377,7 @@ function renderMyPatients(data) {
 
     if(myPatientsDischargedList) {
         if (myDischargedCases.length === 0) {
-            myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>`;
+            myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>`;
         } else {
             myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
         }
