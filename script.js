@@ -48,6 +48,20 @@ onSnapshot(q, (querySnapshot) => {
     renderPatients(allPatientsData);
 }, (error) => {
     console.error("Error:", error);
+    // แสดง Error บนหน้าจอแทนการค้าง Loading
+    const errorMsg = `
+        <tr>
+            <td colspan="9" style="text-align:center; color: #c0392b; padding: 20px;">
+                <strong>⚠️ เกิดข้อผิดพลาด (Error):</strong> ${error.message}<br>
+                <small>
+                    1. ลองกด <strong>F12</strong> ดู Console ว่ามีลิงก์สร้าง Index หรือไม่<br>
+                    2. ลองกดปุ่ม <strong>"รับเคสใหม่"</strong> เพื่อสร้าง Database ก้อนใหม่<br>
+                    3. เช็ค <strong>Firestore Rules</strong> ว่าอนุญาตให้เขียน/อ่านหรือไม่
+                </small>
+            </td>
+        </tr>`;
+    patientList.innerHTML = errorMsg;
+    dischargedList.innerHTML = errorMsg;
 });
 
 function renderPatients(data) {
@@ -59,7 +73,7 @@ function renderPatients(data) {
 
     // --- Active ---
     if (activeCases.length === 0) {
-        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่พบผู้ป่วย (No Active Case)</td></tr>';
+        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่พบผู้ป่วย (No Active Case) - ลองกดรับเคสใหม่ดูครับ</td></tr>';
     } else {
         activeCases.forEach(pt => {
             patientList.appendChild(createRow(pt, true));
@@ -203,7 +217,7 @@ if(admitForm) {
             closeModal();
         } catch (error) {
             console.error(error);
-            alert("บันทึกไม่สำเร็จ");
+            alert("บันทึกไม่สำเร็จ: " + error.message);
         } finally {
             submitBtn.innerText = "บันทึกข้อมูล";
             submitBtn.disabled = false;
