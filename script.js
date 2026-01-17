@@ -25,7 +25,6 @@ const modal = document.getElementById('modal');
 const closeBtn = document.querySelector('.close-btn');
 const admitForm = document.getElementById('admit-form');
 const searchInput = document.getElementById('searchInput');
-const sortBySelect = document.getElementById('sortBy'); // เพิ่มตัวแปร Sort
 const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-btn');
 
@@ -38,7 +37,6 @@ if(document.getElementById('admitDate')) {
 // ------------------------------------------------------------------
 // 1. Real-time Listener
 // ------------------------------------------------------------------
-// ดึงข้อมูลตาม Ward มาก่อน (Sort หลัก)
 const q = query(collection(db, COLLECTION_NAME), orderBy("ward")); 
 
 onSnapshot(q, (querySnapshot) => {
@@ -46,8 +44,7 @@ onSnapshot(q, (querySnapshot) => {
     querySnapshot.forEach((docSnap) => {
         allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
     });
-    // เรียกใช้ฟังก์ชัน applyFilterAndSort เพื่อแสดงผล
-    applyFilterAndSort();
+    renderPatients(allPatientsData); // เรียก render ปกติ (ไม่ต้องผ่าน Sort logic)
 }, (error) => {
     console.error("Error:", error);
     const errorMsg = `
@@ -61,48 +58,22 @@ onSnapshot(q, (querySnapshot) => {
 });
 
 // ------------------------------------------------------------------
-// 2. Logic รวม: Filter (Search) + Sort
+// 2. Render & Search Logic (กลับไปแบบเดิม)
 // ------------------------------------------------------------------
-function applyFilterAndSort() {
+function renderPatients(data) {
     const keyword = searchInput.value.toLowerCase().trim();
-    const sortValue = sortBySelect.value;
-
-    // 2.1 Filter
-    let filteredData = allPatientsData.filter(pt => {
+    
+    // กรองข้อมูลตาม Search อย่างเดียว
+    const filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
     });
 
-    // 2.2 Sort (ทำในเครื่อง Client เลย ไม่ต้อง Query ใหม่ เร็วกว่า)
-    filteredData.sort((a, b) => {
-        if (sortValue === 'bed') {
-            // เรียงเตียงแบบตัวเลข (Numeric Sort) เช่น 2 มาก่อน 10
-            return (a.bed || '').localeCompare((b.bed || ''), undefined, {numeric: true, sensitivity: 'base'});
-        } else if (sortValue === 'date') {
-            // เรียงตามวันที่
-            return new Date(a.date || 0) - new Date(b.date || 0);
-        } else {
-            // Default: Ward
-            return (a.ward || '').localeCompare(b.ward || '');
-        }
-    });
-
-    renderPatients(filteredData);
-}
-
-// Event Listeners สำหรับ Search และ Sort
-searchInput.addEventListener('input', applyFilterAndSort);
-sortBySelect.addEventListener('change', applyFilterAndSort);
-
-// ------------------------------------------------------------------
-// 3. Render
-// ------------------------------------------------------------------
-function renderPatients(data) {
     patientList.innerHTML = '';
     dischargedList.innerHTML = '';
 
-    const activeCases = data.filter(pt => pt.status !== 'Discharged');
-    const dischargedCases = data.filter(pt => pt.status === 'Discharged');
+    const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
+    const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
     // --- Active ---
     if (activeCases.length === 0) {
@@ -122,6 +93,9 @@ function renderPatients(data) {
         });
     }
 }
+
+// Event Listeners สำหรับ Search
+searchInput.addEventListener('input', () => renderPatients(allPatientsData));
 
 function createRow(pt, isActive) {
     const row = document.createElement('tr');
@@ -150,25 +124,23 @@ function createRow(pt, isActive) {
         `;
     }
 
-    // เพิ่ม attribute 'data-label' ในแต่ละ td เพื่อให้ CSS Mobile View ดึงไปแสดงเป็นหัวข้อได้
+    // ตัด data-label ออก กลับไปใช้ตารางปกติ
     row.innerHTML = `
-        <td data-label="Ward"><strong>${pt.ward || '-'}</strong></td>
-        <td data-label="Bed">
-            <div style="font-size:1.1em;">${pt.bed || '?'}</div>
-        </td>
-        <td data-label="Date">${pt.date || '-'}</td>
-        <td data-label="HN / AN">
+        <td><strong>${pt.ward || '-'}</strong></td>
+        <td><div style="font-size:1.1em;">${pt.bed || '?'}</div></td>
+        <td>${pt.date || '-'}</td>
+        <td>
             <div><strong>HN:</strong> ${pt.hn || '-'}</div>
             <div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div>
         </td>
-        <td data-label="Patient Info">
+        <td>
             <div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div>
             <div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div>
         </td>
-        <td data-label="Diagnosis">${pt.diag || '-'}</td>
-        <td data-label="Owner">${pt.owner || '-'}</td>
-        <td data-label="Note" class="text-orange">${pt.note || '-'}</td>
-        <td data-label="Action">
+        <td>${pt.diag || '-'}</td>
+        <td>${pt.owner || '-'}</td>
+        <td class="text-orange">${pt.note || '-'}</td>
+        <td>
             <div class="action-buttons">
                 ${actionButtons}
             </div>
@@ -178,7 +150,7 @@ function createRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 4. Actions (CRUD)
+// 3. Actions (CRUD)
 // ------------------------------------------------------------------
 
 window.dischargeCase = async (docId) => {
