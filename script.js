@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
-const SCHEDULE_COLLECTION = "schedules"; // 📅 สร้าง Collection ใหม่สำหรับตารางเวร
+const SCHEDULE_COLLECTION = "schedules";
 
 // --- LOGIN LOGIC ---
 const loginForm = document.getElementById('login-form');
@@ -25,26 +25,26 @@ const appContainer = document.getElementById('app-container');
 const loginError = document.getElementById('login-error');
 const WARD_PASSCODE = "1234"; 
 
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (document.getElementById('login-password').value === WARD_PASSCODE) {
-        localStorage.setItem('sx_ipd_is_logged_in', 'true');
-        loginScreen.style.display = 'none';
-        appContainer.style.display = 'block';
-        initApp();
-    } else {
-        loginError.style.display = 'block';
-        document.getElementById('login-password').value = '';
-    }
-});
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (document.getElementById('login-password').value === WARD_PASSCODE) {
+            localStorage.setItem('sx_ipd_is_logged_in', 'true');
+            loginScreen.style.display = 'none';
+            appContainer.style.display = 'block';
+            initApp();
+        } else {
+            loginError.style.display = 'block';
+            document.getElementById('login-password').value = '';
+        }
+    });
+}
 
 // --- UI Logic: Tabs & Modals ---
 window.switchTab = (tabName) => {
-    // จัดการปุ่ม
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
 
-    // สลับหน้า View
     if (tabName === 'patients') {
         document.getElementById('patients-view').style.display = 'block';
         document.getElementById('schedule-view').style.display = 'none';
@@ -61,9 +61,7 @@ window.closeModal = (modalId) => {
 // Global Elements
 const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
-const dutyList = document.getElementById('duty-list'); // 📅 ตารางเวร
-
-// Modal 1: Admit
+const dutyList = document.getElementById('duty-list');
 const addBtn = document.getElementById('add-btn');
 const modal = document.getElementById('modal');
 const admitForm = document.getElementById('admit-form');
@@ -71,12 +69,10 @@ const searchInput = document.getElementById('searchInput');
 const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-btn');
 
-// Modal 2: Schedule
 const addDutyBtn = document.getElementById('add-duty-btn');
 const dutyModal = document.getElementById('duty-modal');
 const dutyForm = document.getElementById('duty-form');
 
-// Import Excel Elements
 const importExcelBtn = document.getElementById('import-excel-btn');
 const excelInput = document.getElementById('excel-file');
 
@@ -84,8 +80,8 @@ let allPatientsData = [];
 
 // Check Auto Login
 if (localStorage.getItem('sx_ipd_is_logged_in') === 'true') {
-    loginScreen.style.display = 'none';
-    appContainer.style.display = 'block';
+    if(loginScreen) loginScreen.style.display = 'none';
+    if(appContainer) appContainer.style.display = 'block';
     initApp();
 }
 
@@ -97,7 +93,7 @@ if(document.getElementById('duty-date')) {
 }
 
 // ------------------------------------------------------------------
-// 1. App Initialization (Listeners)
+// 1. App Initialization
 // ------------------------------------------------------------------
 function initApp() {
     console.log("Starting Firebase Listeners...");
@@ -112,7 +108,7 @@ function initApp() {
         renderPatients(allPatientsData);
     });
 
-    // 1.2 Listener for Schedules 📅
+    // 1.2 Listener for Schedules
     const qSchedule = query(collection(db, SCHEDULE_COLLECTION), orderBy("date"));
     onSnapshot(qSchedule, (snapshot) => {
         const duties = [];
@@ -122,9 +118,10 @@ function initApp() {
 }
 
 // ------------------------------------------------------------------
-// 2. Patient Logic (Render & CRUD)
+// 2. Patient Logic
 // ------------------------------------------------------------------
 function renderPatients(data) {
+    if(!patientList) return;
     const keyword = searchInput.value.toLowerCase().trim();
     const filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
@@ -144,7 +141,7 @@ function renderPatients(data) {
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
 }
 
-searchInput.addEventListener('input', () => renderPatients(allPatientsData));
+if(searchInput) searchInput.addEventListener('input', () => renderPatients(allPatientsData));
 
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
@@ -172,9 +169,10 @@ function createPatientRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 3. Schedule Logic (Render & CRUD & Import) 📅
+// 3. Schedule Logic (Improved Import)
 // ------------------------------------------------------------------
 function renderSchedule(duties) {
+    if(!dutyList) return;
     dutyList.innerHTML = '';
     if (duties.length === 0) {
         dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>';
@@ -183,14 +181,18 @@ function renderSchedule(duties) {
 
     duties.forEach(duty => {
         const row = document.createElement('tr');
-        // แปลงวันที่ให้สวยงาม (เช่น 2024-01-25 -> Fri, 25/01/24)
-        const dateObj = new Date(duty.date);
-        const dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
+        // Safely parse date
+        let dateStr = duty.date;
+        try {
+            const dateObj = new Date(duty.date);
+            if (!isNaN(dateObj)) {
+                dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
+            }
+        } catch(e) {}
         
-        // Highlight วันนี้
         const todayStr = new Date().toISOString().split('T')[0];
         const isToday = duty.date === todayStr;
-        if(isToday) row.style.backgroundColor = "#e8f8f5"; // สีเขียวอ่อนๆ
+        if(isToday) row.style.backgroundColor = "#e8f8f5";
 
         row.innerHTML = `
             <td>
@@ -208,25 +210,27 @@ function renderSchedule(duties) {
 }
 
 // Add Duty
-dutyForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const dutyData = {
-        date: document.getElementById('duty-date').value,
-        ward: document.getElementById('duty-ward').value, // ปรับเป็น Ward
-        er: document.getElementById('duty-er').value,     // ปรับเป็น ER
-        timestamp: serverTimestamp()
-    };
-    try {
-        await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
-        window.closeModal('duty-modal');
-        dutyForm.reset();
-        document.getElementById('duty-date').valueAsDate = new Date();
-    } catch (error) {
-        alert("Error adding duty: " + error.message);
-    }
-});
+if(dutyForm) {
+    dutyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const dutyData = {
+            date: document.getElementById('duty-date').value,
+            ward: document.getElementById('duty-ward').value,
+            er: document.getElementById('duty-er').value,
+            timestamp: serverTimestamp()
+        };
+        try {
+            await addDoc(collection(db, SCHEDULE_COLLECTION), dutyData);
+            window.closeModal('duty-modal');
+            dutyForm.reset();
+            document.getElementById('duty-date').valueAsDate = new Date();
+        } catch (error) {
+            alert("Error adding duty: " + error.message);
+        }
+    });
+}
 
-// Import Excel Logic
+// ✅ Improved Import Excel Logic
 if (importExcelBtn && excelInput) {
     importExcelBtn.onclick = () => excelInput.click();
     
@@ -238,41 +242,69 @@ if (importExcelBtn && excelInput) {
         reader.onload = async (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
-                // อ่าน Workbook
                 const workbook = XLSX.read(data, {type: 'array'});
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // แปลงเป็น JSON (cellDates: true เพื่อให้วันที่เป็น Object)
+                // อ่านข้อมูลดิบ
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, {
                     cellDates: true, 
                     defval: "" 
                 }); 
                 
+                console.log("Raw Excel Data:", jsonData); // ดูใน Console ได้เลยว่าอ่านอะไรมาบ้าง
+
                 let count = 0;
                 for(const row of jsonData) {
-                    // คาดหวังหัวตารางใหม่: Date, Ward, ER
-                    // แปลง Date Object เป็น String 'YYYY-MM-DD'
+                    // 1. Normalization: หา Key ที่ถูกต้องแบบไม่สนตัวพิมพ์เล็กใหญ่
+                    const keys = Object.keys(row);
+                    const dateKey = keys.find(k => k.trim().toLowerCase() === 'date');
+                    const wardKey = keys.find(k => k.trim().toLowerCase() === 'ward');
+                    const erKey = keys.find(k => k.trim().toLowerCase() === 'er');
+
+                    // ถ้าไม่มีคอลัมน์ Date ข้ามเลย
+                    if (!dateKey) continue;
+
                     let dateStr = "";
-                    if (row.Date instanceof Date) {
-                        dateStr = row.Date.toISOString().split('T')[0];
-                    } else if (typeof row.Date === 'string') {
-                        // กรณีเป็น Text
-                        dateStr = row.Date;
+                    const rawDate = row[dateKey];
+
+                    // 2. Date Parsing: จัดการวันที่ให้ฉลาดขึ้น
+                    if (rawDate instanceof Date) {
+                        // ป้องกันเรื่อง Timezone ทำให้วันที่เลื่อน (ใช้ local time -> string)
+                        const year = rawDate.getFullYear();
+                        const month = String(rawDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(rawDate.getDate()).padStart(2, '0');
+                        dateStr = `${year}-${month}-${day}`;
+                    } else if (typeof rawDate === 'string') {
+                        // ถ้าเป็น Text พยายามตัดเอาแค่ YYYY-MM-DD
+                        dateStr = rawDate.trim();
+                    } else if (typeof rawDate === 'number') {
+                        // กรณี Excel Serial Number
+                         const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000); // แปลง Serial เป็น JS Date
+                         const year = jsDate.getFullYear();
+                         const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+                         const day = String(jsDate.getDate()).padStart(2, '0');
+                         dateStr = `${year}-${month}-${day}`;
                     }
 
                     if (dateStr) {
                         await addDoc(collection(db, SCHEDULE_COLLECTION), {
                             date: dateStr,
-                            ward: row.Ward || "", // รับค่า Ward
-                            er: row.ER || "",     // รับค่า ER
+                            ward: wardKey ? row[wardKey] : "",
+                            er: erKey ? row[erKey] : "",
                             timestamp: serverTimestamp()
                         });
                         count++;
                     }
                 }
-                alert(`Import สำเร็จจำนวน ${count} วัน!`);
-                excelInput.value = ''; // Reset Input
+                
+                if (count > 0) {
+                    alert(`✅ Import สำเร็จจำนวน ${count} วัน!`);
+                } else {
+                    alert(`⚠️ ไม่พบข้อมูลที่นำเข้าได้ (0 วัน)\nตรวจสอบหัวตารางให้เป็น Date, Ward, ER`);
+                }
+                
+                excelInput.value = ''; 
             } catch (error) {
                 console.error(error);
                 alert("เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: " + error.message);
@@ -290,50 +322,50 @@ window.deleteDuty = async (docId) => {
 }
 
 // ------------------------------------------------------------------
-// 4. Shared Actions (Patient CRUD)
+// 4. Shared Actions
 // ------------------------------------------------------------------
 window.dischargeCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Discharged', dischargedAt: serverTimestamp() });
 window.readmitCase = async (docId) => updateDoc(doc(db, COLLECTION_NAME, docId), { status: 'Active', dischargedAt: null });
 window.deleteCase = async (docId) => { if(confirm('⚠️ ยืนยันลบข้อมูลถาวร?')) await deleteDoc(doc(db, COLLECTION_NAME, docId)); };
 window.logout = () => { if(confirm('ต้องการออกจากระบบหรือไม่?')) { localStorage.removeItem('sx_ipd_is_logged_in'); location.reload(); } };
 
-// Submit Patient Form
-admitForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    submitBtn.innerText = "กำลังบันทึก...";
-    submitBtn.disabled = true;
+if(admitForm) {
+    admitForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitBtn.innerText = "กำลังบันทึก...";
+        submitBtn.disabled = true;
 
-    const editDocId = document.getElementById('edit-doc-id').value;
-    const patientData = {
-        ward: document.getElementById('ward').value || "", 
-        bed: document.getElementById('bed').value || "",
-        date: document.getElementById('admitDate').value || "",
-        hn: document.getElementById('hn').value || "",
-        an: document.getElementById('an').value || "",
-        name: document.getElementById('name').value || "",
-        age: document.getElementById('age').value || "",
-        gender: document.getElementById('gender').value || "",
-        diag: document.getElementById('diag').value || "",
-        owner: document.getElementById('owner').value || "",
-        note: document.getElementById('note').value || "",
-        status: editDocId ? undefined : "Active",
-        timestamp: serverTimestamp()
-    };
-    if(patientData.status === undefined) delete patientData.status;
+        const editDocId = document.getElementById('edit-doc-id').value;
+        const patientData = {
+            ward: document.getElementById('ward').value || "", 
+            bed: document.getElementById('bed').value || "",
+            date: document.getElementById('admitDate').value || "",
+            hn: document.getElementById('hn').value || "",
+            an: document.getElementById('an').value || "",
+            name: document.getElementById('name').value || "",
+            age: document.getElementById('age').value || "",
+            gender: document.getElementById('gender').value || "",
+            diag: document.getElementById('diag').value || "",
+            owner: document.getElementById('owner').value || "",
+            note: document.getElementById('note').value || "",
+            status: editDocId ? undefined : "Active",
+            timestamp: serverTimestamp()
+        };
+        if(patientData.status === undefined) delete patientData.status;
 
-    try {
-        if (editDocId) await updateDoc(doc(db, COLLECTION_NAME, editDocId), patientData);
-        else await addDoc(collection(db, COLLECTION_NAME), patientData);
-        window.closeModal('modal');
-    } catch (error) {
-        alert("บันทึกไม่สำเร็จ: " + error.message);
-    } finally {
-        submitBtn.innerText = "บันทึกข้อมูล";
-        submitBtn.disabled = false;
-    }
-});
+        try {
+            if (editDocId) await updateDoc(doc(db, COLLECTION_NAME, editDocId), patientData);
+            else await addDoc(collection(db, COLLECTION_NAME), patientData);
+            window.closeModal('modal');
+        } catch (error) {
+            alert("บันทึกไม่สำเร็จ: " + error.message);
+        } finally {
+            submitBtn.innerText = "บันทึกข้อมูล";
+            submitBtn.disabled = false;
+        }
+    });
+}
 
-// Edit Modal
 window.openEditModal = (id) => {
     const pt = allPatientsData.find(p => p.id === id);
     if (!pt) return;
@@ -353,15 +385,16 @@ window.openEditModal = (id) => {
     modal.style.display = 'block';
 }
 
-// Modal Triggers
-addBtn.onclick = () => { 
-    admitForm.reset(); 
-    document.getElementById('edit-doc-id').value = ""; 
-    document.getElementById('admitDate').valueAsDate = new Date();
-    modalTitle.innerText = "รับเคสใหม่ (New Admission)";
-    modal.style.display = 'block'; 
-};
-addDutyBtn.onclick = () => { dutyModal.style.display = 'block'; };
+if(addBtn) { 
+    addBtn.onclick = () => { 
+        admitForm.reset(); 
+        document.getElementById('edit-doc-id').value = ""; 
+        document.getElementById('admitDate').valueAsDate = new Date();
+        modalTitle.innerText = "รับเคสใหม่ (New Admission)";
+        modal.style.display = 'block'; 
+    };
+}
+if(addDutyBtn) addDutyBtn.onclick = () => { dutyModal.style.display = 'block'; };
 
 window.onclick = (e) => {
     if (e.target == modal) window.closeModal('modal');
