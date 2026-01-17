@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- ✅ เพิ่ม Library สำหรับอ่านไฟล์ Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -112,7 +110,6 @@
                             <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
                         </button>
                         
-                        <!-- ✅ ปุ่ม Import Excel -->
                         <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
                         <button id="import-excel-btn" class="btn" style="background-color: #27ae60; color: white;">
                             <i class="fas fa-file-excel"></i> Import Excel
@@ -125,14 +122,13 @@
                         <thead>
                             <tr>
                                 <th style="width: 150px;">Date / Day</th>
-                                <th>Staff (อาจารย์เวร)</th>
-                                <th>Resident / Intern</th>
-                                <th>Extern / Ns.</th>
+                                <th>Ward (เวรวอร์ด)</th> <!-- เปลี่ยนหัวตาราง -->
+                                <th>ER (เวรห้องฉุกเฉิน)</th> <!-- เปลี่ยนหัวตาราง -->
                                 <th style="width: 60px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="duty-list">
-                            <tr><td colspan="5" style="text-align:center;">Loading schedule...</td></tr>
+                            <tr><td colspan="4" style="text-align:center;">Loading schedule...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -234,7 +230,7 @@
         </div>
     </div>
 
-    <!-- Modal 2: Add Duty (ตารางเวร) -->
+    <!-- Modal 2: Add Duty (ปรับฟอร์มใหม่) -->
     <div id="duty-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('duty-modal')">&times;</span>
@@ -245,16 +241,12 @@
                     <input type="date" id="duty-date" required>
                 </div>
                 <div class="form-group">
-                    <label>Staff (อาจารย์เวร)</label>
-                    <input type="text" id="duty-staff" placeholder="เช่น อ.สมศักดิ์">
+                    <label>Ward (เวรวอร์ด)</label>
+                    <input type="text" id="duty-ward" placeholder="เช่น R3 Somsri / Ext. Malee">
                 </div>
                 <div class="form-group">
-                    <label>Resident / Intern (เวร 1)</label>
-                    <input type="text" id="duty-res" placeholder="เช่น R3 Somsri">
-                </div>
-                <div class="form-group">
-                    <label>Extern / Nurse (เวรเสริม)</label>
-                    <input type="text" id="duty-ext" placeholder="เช่น Ext. Malee">
+                    <label>ER (เวรห้องฉุกเฉิน)</label>
+                    <input type="text" id="duty-er" placeholder="เช่น R2 Sompong / Intern A">
                 </div>
                 <button type="submit" class="btn btn-submit">บันทึกเวร</button>
             </form>

@@ -177,7 +177,7 @@ function createPatientRow(pt, isActive) {
 function renderSchedule(duties) {
     dutyList.innerHTML = '';
     if (duties.length === 0) {
-        dutyList.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>';
+        dutyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ยังไม่มีตารางเวร</td></tr>';
         return;
     }
 
@@ -197,9 +197,8 @@ function renderSchedule(duties) {
                 <strong>${dateStr}</strong> 
                 ${isToday ? '<span style="color:green; font-size:0.8em;">(Today)</span>' : ''}
             </td>
-            <td>${duty.staff || '-'}</td>
-            <td>${duty.resident || '-'}</td>
-            <td>${duty.extern || '-'}</td>
+            <td>${duty.ward || '-'}</td>
+            <td>${duty.er || '-'}</td>
             <td>
                 <button class="btn-sm btn-delete" onclick="window.deleteDuty('${duty.id}')"><i class="fas fa-trash"></i></button>
             </td>
@@ -213,9 +212,8 @@ dutyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const dutyData = {
         date: document.getElementById('duty-date').value,
-        staff: document.getElementById('duty-staff').value,
-        resident: document.getElementById('duty-res').value,
-        extern: document.getElementById('duty-ext').value,
+        ward: document.getElementById('duty-ward').value, // ปรับเป็น Ward
+        er: document.getElementById('duty-er').value,     // ปรับเป็น ER
         timestamp: serverTimestamp()
     };
     try {
@@ -253,7 +251,7 @@ if (importExcelBtn && excelInput) {
                 
                 let count = 0;
                 for(const row of jsonData) {
-                    // คาดหวังหัวตาราง: Date, Staff, Resident, Extern
+                    // คาดหวังหัวตารางใหม่: Date, Ward, ER
                     // แปลง Date Object เป็น String 'YYYY-MM-DD'
                     let dateStr = "";
                     if (row.Date instanceof Date) {
@@ -266,9 +264,8 @@ if (importExcelBtn && excelInput) {
                     if (dateStr) {
                         await addDoc(collection(db, SCHEDULE_COLLECTION), {
                             date: dateStr,
-                            staff: row.Staff || "",
-                            resident: row.Resident || "",
-                            extern: row.Extern || "",
+                            ward: row.Ward || "", // รับค่า Ward
+                            er: row.ER || "",     // รับค่า ER
                             timestamp: serverTimestamp()
                         });
                         count++;
