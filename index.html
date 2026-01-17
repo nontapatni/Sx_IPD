@@ -7,6 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- ✅ เพิ่ม Library สำหรับอ่านไฟล์ Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -32,7 +35,7 @@
                 <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
             </header>
 
-            <!-- 🟢 TAB NAVIGATION (เมนูสลับหน้า) -->
+            <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-user-injured"></i> รายชื่อคนไข้ (Patient List)
@@ -104,9 +107,17 @@
             <!-- ================= PAGE 2: DUTY SCHEDULE ================= -->
             <div id="schedule-view" style="display: none;">
                 <div class="controls-bar">
-                    <button id="add-duty-btn" class="btn btn-primary">
-                        <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="add-duty-btn" class="btn btn-primary">
+                            <i class="fas fa-calendar-plus"></i> ลงตารางเวร (Add Duty)
+                        </button>
+                        
+                        <!-- ✅ ปุ่ม Import Excel -->
+                        <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
+                        <button id="import-excel-btn" class="btn" style="background-color: #27ae60; color: white;">
+                            <i class="fas fa-file-excel"></i> Import Excel
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card">

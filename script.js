@@ -76,6 +76,10 @@ const addDutyBtn = document.getElementById('add-duty-btn');
 const dutyModal = document.getElementById('duty-modal');
 const dutyForm = document.getElementById('duty-form');
 
+// Import Excel Elements
+const importExcelBtn = document.getElementById('import-excel-btn');
+const excelInput = document.getElementById('excel-file');
+
 let allPatientsData = [];
 
 // Check Auto Login
@@ -168,7 +172,7 @@ function createPatientRow(pt, isActive) {
 }
 
 // ------------------------------------------------------------------
-// 3. Schedule Logic (Render & CRUD) 📅
+// 3. Schedule Logic (Render & CRUD & Import) 📅
 // ------------------------------------------------------------------
 function renderSchedule(duties) {
     dutyList.innerHTML = '';
@@ -223,6 +227,63 @@ dutyForm.addEventListener('submit', async (e) => {
         alert("Error adding duty: " + error.message);
     }
 });
+
+// Import Excel Logic
+if (importExcelBtn && excelInput) {
+    importExcelBtn.onclick = () => excelInput.click();
+    
+    excelInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                // อ่าน Workbook
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // แปลงเป็น JSON (cellDates: true เพื่อให้วันที่เป็น Object)
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                    cellDates: true, 
+                    defval: "" 
+                }); 
+                
+                let count = 0;
+                for(const row of jsonData) {
+                    // คาดหวังหัวตาราง: Date, Staff, Resident, Extern
+                    // แปลง Date Object เป็น String 'YYYY-MM-DD'
+                    let dateStr = "";
+                    if (row.Date instanceof Date) {
+                        dateStr = row.Date.toISOString().split('T')[0];
+                    } else if (typeof row.Date === 'string') {
+                        // กรณีเป็น Text
+                        dateStr = row.Date;
+                    }
+
+                    if (dateStr) {
+                        await addDoc(collection(db, SCHEDULE_COLLECTION), {
+                            date: dateStr,
+                            staff: row.Staff || "",
+                            resident: row.Resident || "",
+                            extern: row.Extern || "",
+                            timestamp: serverTimestamp()
+                        });
+                        count++;
+                    }
+                }
+                alert(`Import สำเร็จจำนวน ${count} วัน!`);
+                excelInput.value = ''; // Reset Input
+            } catch (error) {
+                console.error(error);
+                alert("เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: " + error.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
 
 // Delete Duty
 window.deleteDuty = async (docId) => {
