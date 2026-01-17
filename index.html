@@ -38,31 +38,38 @@
             <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p></p>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
+                <!-- ✅ ปรับ Layout ขวาบน: แยกบรรทัด User Info กับ ปุ่ม -->
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                    
+                    <!-- บรรทัดที่ 1: ชื่อผู้ใช้ -->
+                    <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600;"></div>
 
-                    <!-- ✅ ปุ่ม Dark Mode -->
-                    <button id="toggle-dark-mode" class="btn-sm" style="background-color: #555; color: white; padding: 8px 12px; font-size: 14px;" title="Dark Mode">
-                        <i class="fas fa-moon"></i>
-                    </button>
+                    <!-- บรรทัดที่ 2: กลุ่มปุ่มต่างๆ -->
+                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                        <!-- ปุ่ม Dark Mode -->
+                        <button id="toggle-dark-mode" class="btn-sm" style="background-color: #555; color: white; padding: 8px 12px; font-size: 14px;" title="Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
 
-                    <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-cog"></i> Settings
-                    </button>
+                        <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
 
-                    <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-user-plus"></i> Add user
-                    </button>
+                        <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-user-plus"></i> Add user
+                        </button>
 
-                    <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
-                        <i class="fas fa-key"></i> Change password
-                    </button>
-                    <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
+                        <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-key"></i> Change password
+                        </button>
+                        
+                        <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -253,7 +260,7 @@
                 </div>
             </div>
 
-            <!-- ================= PAGE 4: DUTY SCHEDULE ================= -->
+            <!-- ================= PAGE 3: DUTY SCHEDULE ================= -->
             <div id="schedule-view" style="display: none;">
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">
