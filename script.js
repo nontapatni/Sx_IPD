@@ -358,7 +358,15 @@ function renderSummary(data) {
         if (pt.status !== 'Discharged') stats[owner].active++;
     });
 
-    const sortedStats = Object.entries(stats).sort((a, b) => b[1].active - a[1].active);
+    // ✅ ปรับการเรียงลำดับ (Sort Logic)
+    const sortedStats = Object.entries(stats).sort(([, a], [, b]) => {
+        // 1. เรียงตาม Active Cases (มาก -> น้อย)
+        if (b.active !== a.active) {
+            return b.active - a.active;
+        }
+        // 2. ถ้า Active เท่ากัน ให้เรียงตาม Total Cases (มาก -> น้อย)
+        return b.total - a.total;
+    });
 
     if (sortedStats.length === 0) {
         summaryList.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data available</td></tr>';
