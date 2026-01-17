@@ -121,6 +121,11 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
     flex-wrap: wrap;
 }
 
+/* เพิ่มสไตล์สำหรับปุ่ม Export ด้านล่าง (ถ้าต้องการปรับแต่งพิเศษ) */
+#export-patient-btn {
+    min-width: 150px;
+}
+
 /* Search Box */
 .search-box { position: relative; width: 250px; }
 .search-box input {

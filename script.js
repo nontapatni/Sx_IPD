@@ -35,25 +35,28 @@ const loginForm = document.getElementById('login-form');
 const EMAIL_DOMAIN = "@ward.local"; 
 
 let currentUser = null;
-let currentUsername = ""; // เก็บชื่อ Username ไว้ใช้กรอง My Patients
+let currentUsername = "";
 
 // --- AUTH STATE LISTENER ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        // เก็บชื่อ Username (ตัด @ward.local)
         currentUsername = user.email.replace(EMAIL_DOMAIN, '').toLowerCase(); 
         console.log("Logged in:", currentUsername);
         
-        // Check Admin
+        // Check Admin -> Show/Hide Buttons
         const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
         const addUserBtn = document.getElementById('open-create-user-btn');
         const settingsBtn = document.getElementById('open-settings-btn');
+        const myPatientTab = document.getElementById('tab-mypatients');
         
         if(addUserBtn) addUserBtn.style.display = isAdmin ? 'flex' : 'none';
         if(settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none';
+        
+        // ซ่อน Tab My Patients ถ้าเป็น Admin
+        if(myPatientTab) myPatientTab.style.display = isAdmin ? 'none' : 'block';
 
-        // ✅ แสดงชื่อผู้ใช้ (ตัด @ward.local ออก)
+        // แสดงชื่อผู้ใช้
         const usernameDisplay = document.getElementById('user-info');
         if (usernameDisplay) {
             usernameDisplay.innerHTML = `<i class="fas fa-user-circle"></i> Log in as: ${currentUsername}`;
@@ -71,22 +74,24 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// LOGIN
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    authError.style.display = 'none';
-    const fakeEmail = username + EMAIL_DOMAIN;
+// LOGIN Handler
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        authError.style.display = 'none';
+        const fakeEmail = username + EMAIL_DOMAIN;
 
-    try {
-        await signInWithEmailAndPassword(auth, fakeEmail, password);
-    } catch (error) {
-        console.error(error);
-        authError.innerText = getErrorMessage(error.code);
-        authError.style.display = 'block';
-    }
-});
+        try {
+            await signInWithEmailAndPassword(auth, fakeEmail, password);
+        } catch (error) {
+            console.error(error);
+            authError.innerText = getErrorMessage(error.code);
+            authError.style.display = 'block';
+        }
+    });
+}
 
 // CREATE USER (ADMIN ONLY)
 const createUserForm = document.getElementById('create-user-form');
@@ -179,6 +184,7 @@ function loadDropdownSettings() {
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
+            // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
             data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
@@ -199,14 +205,12 @@ function updateSelectOptions(selectId, items) {
     if(!select || !items) return;
     const currentVal = select.value;
     select.innerHTML = `<option value="">- เลือก ${selectId} -</option>`;
-    
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
         option.textContent = item;
         select.appendChild(option);
     });
-    
     if (items.includes(currentVal)) select.value = currentVal;
 }
 
@@ -229,15 +233,14 @@ if (settingsForm) {
 }
 
 if (openSettingsBtn) {
-    openSettingsBtn.onclick = () => {
-        document.getElementById('settings-modal').style.display = 'block';
-    }
+    openSettingsBtn.onclick = () => document.getElementById('settings-modal').style.display = 'block';
 }
 
 // --- APP LOGIC ---
 const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
-const myPatientsList = document.getElementById('mypatients-list'); // Table List
+const myPatientsList = document.getElementById('mypatients-list'); 
+const myPatientsDischargedList = document.getElementById('mypatients-discharged-list');
 const dutyList = document.getElementById('duty-list');
 
 const addBtn = document.getElementById('add-btn');
@@ -277,7 +280,6 @@ window.switchTab = (tabName) => {
     if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
     else if (tabName === 'mypatients') {
         document.getElementById('mypatients-view').style.display = 'block';
-        // เรียก Render My Patients เมื่อกด Tab
         renderMyPatients(allPatientsData);
     }
     else if (tabName === 'schedule') document.getElementById('schedule-view').style.display = 'block';
@@ -297,7 +299,11 @@ function initApp() {
             allPatientsData.push({ id: docSnap.id, ...docSnap.data() });
         });
         renderPatients(allPatientsData);
-        renderMyPatients(allPatientsData); // อัปเดต My Patients ด้วย
+        renderMyPatients(allPatientsData);
+    }, (error) => {
+        // Error Handler for Patients
+        console.error(error);
+        if(patientList) patientList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error loading patients: ${error.message}</td></tr>`;
     });
 
     // 2. Schedule Listener
@@ -311,6 +317,10 @@ function initApp() {
             allDutiesData.push(d);
         });
         renderSchedule(duties);
+    }, (error) => {
+        // Error Handler for Schedule
+        console.error(error);
+        if(dutyList) dutyList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error loading schedule: ${error.message}</td></tr>`;
     });
 }
 
@@ -344,30 +354,33 @@ function renderPatients(data) {
     else dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
 }
 
-// --- RENDER MY PATIENTS (NEW) ---
+// --- RENDER MY PATIENTS ---
 function renderMyPatients(data) {
     if(!myPatientsList) return;
     myPatientsList.innerHTML = '';
+    if(myPatientsDischargedList) myPatientsDischargedList.innerHTML = '';
 
-    // กรองเฉพาะ:
-    // 1. ยังไม่ Discharge
-    // 2. ชื่อ Owner มีคำว่า currentUsername อยู่ (เช่น "R4 Somjai" มี "somjai")
     const myCases = data.filter(pt => {
-        if (pt.status === 'Discharged') return false;
-        
-        // Clean strings for comparison
         const ownerName = (pt.owner || "").toLowerCase();
         const myName = currentUsername.toLowerCase();
-        
         return ownerName.includes(myName);
     });
 
-    if (myCases.length === 0) {
-        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่มีเคสที่คุณดูแลอยู่ (${currentUsername})</td></tr>`;
+    const myActiveCases = myCases.filter(pt => pt.status !== 'Discharged');
+    const myDischargedCases = myCases.filter(pt => pt.status === 'Discharged');
+
+    if (myActiveCases.length === 0) {
+        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">ไม่มีเคส Active ที่คุณดูแลอยู่ (${currentUsername})</td></tr>`;
     } else {
-        myCases.forEach(pt => {
-            myPatientsList.appendChild(createPatientRow(pt, true));
-        });
+        myActiveCases.forEach(pt => myPatientsList.appendChild(createPatientRow(pt, true)));
+    }
+
+    if(myPatientsDischargedList) {
+        if (myDischargedCases.length === 0) {
+            myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>`;
+        } else {
+            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
+        }
     }
 }
 

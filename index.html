@@ -42,24 +42,19 @@
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <!-- ✅ แสดงชื่อผู้ใช้ตรงนี้ -->
                     <div id="user-info" style="font-size: 14px; color: #555; font-weight: 600; margin-right: 5px;"></div>
 
-                    <!-- ปุ่มตั้งค่า (Admin Only) -->
                     <button id="open-settings-btn" class="btn-sm" style="display: none; background-color: #34495e; color: white; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-cog"></i> ตั้งค่า (Settings)
                     </button>
 
-                    <!-- ปุ่มเพิ่ม User (Admin Only) -->
                     <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้
                     </button>
 
-                    <!-- ปุ่มเปลี่ยนรหัสผ่านตัวเอง -->
                     <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
                     </button>
-                    <!-- ปุ่ม Logout -->
                     <button onclick="window.logout()" class="btn-sm btn-delete" style="font-size: 14px; padding: 8px 12px;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -71,8 +66,8 @@
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> รวมทุกเคส (All Patients)
                 </button>
-                <!-- ✨ เพิ่ม Tab ใหม่ตรงนี้ -->
-                <button class="tab-btn" onclick="window.switchTab('mypatients')">
+                <!-- เพิ่ม ID ให้ปุ่มนี้เพื่อซ่อน/แสดง -->
+                <button id="tab-mypatients" class="tab-btn" onclick="window.switchTab('mypatients')">
                     <i class="fas fa-user-md"></i> คนไข้ของฉัน (My Patients)
                 </button>
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
@@ -80,7 +75,7 @@
                 </button>
             </div>
 
-            <!-- ================= PAGE 1: ALL PATIENTS LIST ================= -->
+            <!-- ================= PAGE 1: PATIENT LIST ================= -->
             <div id="patients-view">
                 <div class="controls-bar">
                     <button id="add-btn" class="btn btn-primary">
@@ -88,9 +83,7 @@
                     </button>
 
                     <div class="controls-right">
-                        <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
-                            <i class="fas fa-file-excel"></i> Export
-                        </button>
+                        <!-- ย้ายปุ่ม Export ออกไปไว้ข้างล่าง -->
 
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
@@ -153,12 +146,20 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- ✅ ย้ายปุ่ม Export มาไว้ด้านล่างสุดของหน้านี้ -->
+                <div style="text-align: right; margin-top: 20px; padding-bottom: 20px;">
+                    <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
+                        <i class="fas fa-file-excel"></i> Export All to Excel
+                    </button>
+                </div>
             </div>
 
-            <!-- ================= PAGE 2: MY PATIENTS (NEW) ================= -->
+            <!-- ================= PAGE 2: MY PATIENTS ================= -->
             <div id="mypatients-view" style="display: none;">
+                <!-- ส่วนที่ 1: Active -->
                 <div class="section-header" style="color: #2980b9;">
-                    <i class="fas fa-user-md"></i> คนไข้ที่ฉันดูแล (Active Cases Only)
+                    <i class="fas fa-user-md"></i> คนไข้ที่ฉันดูแล (My Active Cases)
                 </div>
                 <div class="card">
                     <table id="mypatients-table">
@@ -177,6 +178,31 @@
                         </thead>
                         <tbody id="mypatients-list">
                             <tr><td colspan="9" style="text-align:center;">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ส่วนที่ 2: Discharged (เพิ่มใหม่) -->
+                <div class="section-header" style="color: #7f8c8d; margin-top: 30px;">
+                    <i class="fas fa-history"></i> ประวัติคนไข้ของฉันที่จำหน่ายแล้ว (My Discharged History)
+                </div>
+                <div class="card">
+                    <table id="mypatients-discharged-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Ward</th>
+                                <th style="width: 50px;">Bed</th>
+                                <th style="width: 90px;">Date</th>
+                                <th style="width: 100px;">HN / AN</th>
+                                <th>Patient Info</th>
+                                <th>Diagnosis</th>
+                                <th style="width: 100px;">Owner</th>
+                                <th>Note</th>
+                                <th style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mypatients-discharged-list">
+                            <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -228,7 +254,6 @@
                 <div class="form-row">
                     <div class="form-group" style="flex: 1.5;">
                         <label>Ward</label>
-                        <!-- ตัวเลือกจะถูกโหลดจาก Firebase -->
                         <select id="ward" required>
                             <option value="" selected>- เลือก Ward -</option>
                         </select>
@@ -281,7 +306,6 @@
 
                 <div class="form-group">
                     <label>Owner</label>
-                    <!-- ตัวเลือกจะถูกโหลดจาก Firebase -->
                     <select id="owner">
                         <option value="" selected>-- เลือก Owner --</option>
                     </select>
@@ -320,7 +344,7 @@
         </div>
     </div>
 
-    <!-- Modal 3: Create User (Admin Only) -->
+    <!-- Modal 3: Create User -->
     <div id="create-user-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('create-user-modal')">&times;</span>
@@ -340,7 +364,7 @@
         </div>
     </div>
 
-    <!-- Modal 4: Change Password (Self) -->
+    <!-- Modal 4: Change Password -->
     <div id="change-password-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('change-password-modal')">&times;</span>
@@ -355,7 +379,7 @@
         </div>
     </div>
 
-    <!-- Modal 5: Settings (Admin Only) -->
+    <!-- Modal 5: Settings -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('settings-modal')">&times;</span>
@@ -367,7 +391,6 @@
                     <label>รายชื่อ Wards</label>
                     <textarea id="settings-wards" rows="5" placeholder="Sx ชาย\nSx หญิง..."></textarea>
                 </div>
-                <!-- รวมเป็นช่องเดียว -->
                 <div class="form-group">
                     <label>รายชื่อ Owner (แพทย์เจ้าของไข้)</label>
                     <textarea id="settings-owners" rows="8" placeholder="อ.สมศักดิ์\nR4 Somjai..."></textarea>
