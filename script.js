@@ -179,11 +179,12 @@ function loadDropdownSettings() {
         // Default Data
         if (!docSnap.exists()) {
             data = {
-                wards: ["Sx ชาย", "Sx หญิง", "Burn Unit", "SICU", "Trauma", "Private"],
-                owners: ["อ.สมศักดิ์", "อ.วิชัย", "อ.ปราณี", "R4 Somjai", "R3 Somsri", "R2 Sompong", "R1 Nontapat"]
+                wards: ["Sx ชาย", "Sx หญิง"],
+                owners: ["Phone", "Ice", "Jeng", "Pai", "Sunny", "Title", "Pol"]
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
+            // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
             data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
         }
@@ -240,7 +241,8 @@ const patientList = document.getElementById('patient-list');
 const dischargedList = document.getElementById('discharged-list');
 const myPatientsList = document.getElementById('mypatients-list'); 
 const myPatientsDischargedList = document.getElementById('mypatients-discharged-list');
-const newCasesList = document.getElementById('new-cases-list'); // ✅ Table New Cases
+const newCasesList = document.getElementById('new-cases-list');
+const summaryList = document.getElementById('summary-list'); // Table Summary
 const dutyList = document.getElementById('duty-list');
 
 const addBtn = document.getElementById('add-btn');
@@ -273,11 +275,16 @@ window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
+    document.getElementById('summary-view').style.display = 'none';
     document.getElementById('patients-view').style.display = 'none';
     document.getElementById('mypatients-view').style.display = 'none';
     document.getElementById('schedule-view').style.display = 'none';
 
-    if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
+    if (tabName === 'summary') {
+        document.getElementById('summary-view').style.display = 'block';
+        renderSummary(allPatientsData);
+    }
+    else if (tabName === 'patients') document.getElementById('patients-view').style.display = 'block';
     else if (tabName === 'mypatients') {
         document.getElementById('mypatients-view').style.display = 'block';
         renderMyPatients(allPatientsData);
@@ -300,6 +307,7 @@ function initApp() {
         });
         renderPatients(allPatientsData);
         renderMyPatients(allPatientsData);
+        renderSummary(allPatientsData); // Render Summary
     }, (error) => {
         // Error Handler for Patients
         console.error(error);
@@ -343,7 +351,7 @@ function renderPatients(data) {
 
     patientList.innerHTML = '';
     dischargedList.innerHTML = '';
-    if(newCasesList) newCasesList.innerHTML = ''; // ✅ Clear New Cases
+    if(newCasesList) newCasesList.innerHTML = ''; // Clear New Cases
     
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
@@ -380,6 +388,38 @@ function renderPatients(data) {
             recentCases.forEach(pt => newCasesList.appendChild(createPatientRow(pt, true)));
         }
     }
+}
+
+// --- RENDER SUMMARY ---
+function renderSummary(data) {
+    if(!summaryList) return;
+    summaryList.innerHTML = '';
+
+    const stats = {};
+    data.forEach(pt => {
+        const owner = pt.owner ? pt.owner.trim() : 'Unassigned';
+        if (!stats[owner]) stats[owner] = { total: 0, active: 0 };
+        stats[owner].total++;
+        if (pt.status !== 'Discharged') stats[owner].active++;
+    });
+
+    // Sort by Active Cases descending
+    const sortedStats = Object.entries(stats).sort((a, b) => b[1].active - a[1].active);
+
+    if (sortedStats.length === 0) {
+        summaryList.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data available</td></tr>';
+        return;
+    }
+
+    sortedStats.forEach(([owner, counts]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${owner}</strong></td>
+            <td style="text-align: center; color: #27ae60; font-weight: bold;">${counts.active}</td>
+            <td style="text-align: center; color: #7f8c8d;">${counts.total}</td>
+        `;
+        summaryList.appendChild(row);
+    });
 }
 
 // --- RENDER MY PATIENTS ---

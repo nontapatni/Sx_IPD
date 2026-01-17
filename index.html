@@ -38,7 +38,7 @@
             <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p></p>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -63,18 +63,25 @@
 
             <!-- 🟢 TAB NAVIGATION -->
             <div class="nav-tabs">
+                <!-- 1. All Patients (Active) -->
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> All Patients
                 </button>
+                <!-- 2. My Patients -->
                 <button id="tab-mypatients" class="tab-btn" onclick="window.switchTab('mypatients')">
                     <i class="fas fa-user-md"></i> My Patients
                 </button>
+                <!-- 3. Summary (ย้ายมาตรงนี้) -->
+                <button class="tab-btn" onclick="window.switchTab('summary')">
+                    <i class="fas fa-chart-pie"></i> Summary
+                </button>
+                <!-- 4. Schedule -->
                 <button class="tab-btn" onclick="window.switchTab('schedule')">
                     <i class="fas fa-calendar-alt"></i> ตารางเวร
                 </button>
             </div>
 
-            <!-- ================= PAGE 1: PATIENT LIST ================= -->
+            <!-- ================= PAGE 1: PATIENT LIST (Default View) ================= -->
             <div id="patients-view">
                 <div class="controls-bar">
                     <button id="add-btn" class="btn btn-primary">
@@ -98,7 +105,7 @@
                     </div>
                 </div>
 
-                <!-- ✨ NEW CASES (LAST 24H) - เพิ่มส่วนนี้ -->
+                <!-- ✨ NEW CASES (LAST 24H) -->
                 <div class="section-header" style="color: #d35400;">
                     <i class="fas fa-clock"></i> New Cases (Last 24 Hours)
                 </div>
@@ -227,7 +234,27 @@
                 </div>
             </div>
 
-            <!-- ================= PAGE 3: DUTY SCHEDULE ================= -->
+            <!-- ================= PAGE 3: SUMMARY DASHBOARD (Moved Here) ================= -->
+            <div id="summary-view" style="display: none;">
+                <div class="section-header"><i class="fas fa-chart-bar"></i> Case Statistics by Owner</div>
+                
+                <div class="card">
+                    <table id="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Owner Name</th>
+                                <th style="width: 150px; text-align: center; color: #27ae60;">Active Cases</th>
+                                <th style="width: 150px; text-align: center; color: #7f8c8d;">Total Cases (All time)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-list">
+                            <tr><td colspan="3" style="text-align:center;">Calculating stats...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 4: DUTY SCHEDULE ================= -->
             <div id="schedule-view" style="display: none;">
                 <div class="controls-bar">
                     <div style="display: flex; gap: 10px;">
