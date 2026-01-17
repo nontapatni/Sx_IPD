@@ -38,7 +38,7 @@
             <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p></p>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -65,14 +65,15 @@
             <div id="summary-section" style="margin-bottom: 20px;">
                 <div class="card" style="background: #fdfefe; border-left: 4px solid #27ae60;">
                     <div style="padding-bottom: 10px; font-weight: bold; color: #555; border-bottom: 1px solid #eee; margin-bottom: 10px;">
-                        <i class="fas fa-chart-bar"></i> Summary stat
+                        <i class="fas fa-chart-bar"></i> สรุปยอดคนไข้ (Active Cases by Owner)
                     </div>
                     <table id="summary-table">
                         <thead>
+                            <!-- ✅ ลบ style width: 150px ออก เพื่อให้ปรับขนาดอัตโนมัติ -->
                             <tr style="background-color: transparent;">
                                 <th>Owner Name</th>
-                                <th style="width: 150px; text-align: center; color: #27ae60;">Active Cases</th>
-                                <th style="width: 150px; text-align: center; color: #7f8c8d;">Total Cases</th>
+                                <th style="text-align: center; color: #27ae60;">Active Cases</th>
+                                <th style="text-align: center; color: #7f8c8d;">Total Cases</th>
                             </tr>
                         </thead>
                         <tbody id="summary-list">
