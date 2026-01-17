@@ -22,7 +22,7 @@
             </button>
             <div class="search-box">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="searchInput" placeholder="ค้นหา HN, AN หรือ ชื่อ...">
+                <input type="text" id="searchInput" placeholder="ค้นหา HN, Ward, ชื่อ...">
             </div>
         </div>
 
@@ -32,6 +32,8 @@
             <table id="active-table">
                 <thead>
                     <tr>
+                        <!-- เพิ่มคอลัมน์ Ward -->
+                        <th style="width: 80px;">Ward</th>
                         <th style="width: 60px;">Bed</th>
                         <th>Date</th>
                         <th>HN / AN</th>
@@ -39,11 +41,11 @@
                         <th>Diagnosis</th>
                         <th>Owner</th>
                         <th>Note</th>
-                        <th style="width: 140px;">Action</th> <!-- ขยายความกว้าง Action -->
+                        <th style="width: 140px;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="patient-list">
-                    <tr><td colspan="8" style="text-align:center;">Loading data...</td></tr>
+                    <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -54,6 +56,8 @@
             <table id="discharged-table">
                 <thead>
                     <tr>
+                        <!-- เพิ่มคอลัมน์ Ward -->
+                        <th style="width: 80px;">Ward</th>
                         <th style="width: 60px;">Bed</th>
                         <th>Date</th>
                         <th>HN / AN</th>
@@ -65,7 +69,7 @@
                     </tr>
                 </thead>
                 <tbody id="discharged-list">
-                    <tr><td colspan="8" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
+                    <tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีรายการจำหน่าย</td></tr>
                 </tbody>
             </table>
         </div>
@@ -78,16 +82,31 @@
             <h2 id="modal-title">รับเคสใหม่ (New Admission)</h2>
             <form id="admit-form">
                 <input type="hidden" id="edit-doc-id">
+                
+                <!-- ปรับ Layout: Ward + Bed + Date อยู่บรรทัดเดียวกัน -->
                 <div class="form-row">
+                    <div class="form-group" style="flex: 1.5;">
+                        <label>Ward</label>
+                        <select id="ward">
+                            <option value="" selected>- เลือก Ward -</option>
+                            <option value="Sx ชาย">Sx ชาย</option>
+                            <option value="Sx หญิง">Sx หญิง</option>
+                            <option value="Burn Unit">Burn Unit</option>
+                            <option value="SICU">SICU</option>
+                            <option value="Trauma">Trauma</option>
+                            <option value="Private">Private (พิเศษ)</option>
+                        </select>
+                    </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Bed No.</label>
                         <input type="text" id="bed" placeholder="14A">
                     </div>
-                    <div class="form-group" style="flex: 2;">
+                    <div class="form-group" style="flex: 1.5;">
                         <label>Admit Date</label>
                         <input type="date" id="admitDate">
                     </div>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>HN</label>
@@ -98,10 +117,12 @@
                         <input type="text" id="an" placeholder="66xxxxxx">
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>ชื่อ-สกุล</label>
                     <input type="text" id="name">
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>อายุ</label>
@@ -116,10 +137,12 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>Diagnosis</label>
                     <input type="text" id="diag" placeholder="เช่น Acute Appendicitis">
                 </div>
+
                 <div class="form-group">
                     <label>Owner (แพทย์เจ้าของไข้)</label>
                     <select id="owner">
@@ -135,10 +158,12 @@
                         </optgroup>
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label>Note (Short Note)</label>
                     <textarea id="note" rows="2" placeholder="เช่น Plan Set OR, NPO..."></textarea>
                 </div>
+
                 <button type="submit" id="submit-btn" class="btn btn-submit">บันทึกข้อมูล</button>
             </form>
         </div>
@@ -149,7 +174,7 @@
         setTimeout(function() {
             const tableBody = document.getElementById('patient-list');
             if (tableBody.innerHTML.includes('Loading data...')) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: #c0392b;">⚠️ โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ Live Server / Console)</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #c0392b;">⚠️ โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ Live Server / Console)</td></tr>`;
             }
         }, 4000);
     </script>
