@@ -379,7 +379,7 @@ function renderMyPatients(data) {
         if (myDischargedCases.length === 0) {
             myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">ยังไม่มีประวัติการจำหน่าย</td></tr>`;
         } else {
-            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
+            myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false))); // ส่ง false เพื่อบอกว่าเป็น discharged table (มีปุ่ม return)
         }
     }
 }
@@ -409,7 +409,7 @@ function createPatientRow(pt, isActive) {
         <button class="btn-sm btn-dc" onclick="window.dischargeCase('${pt.id}')">D/C</button>
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     ` : `
-        <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')"><i class="fas fa-edit"></i></button> <!-- เพิ่มปุ่ม Edit ใน History -->
         <button class="btn-sm" style="background-color: #3498db;" onclick="window.readmitCase('${pt.id}')"><i class="fas fa-undo"></i></button>
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     `;
@@ -445,10 +445,22 @@ function renderSchedule(duties) {
         const isToday = duty.date === todayStr;
         if(isToday) row.style.backgroundColor = "#e8f8f5";
 
+        // Highlight Own Name
+        const highlightStyle = "font-weight: bold; color: #e67e22; background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block;";
+        let displayWard = duty.ward || '-';
+        let displayEr = duty.er || '-';
+
+        if (currentUsername && displayWard.toLowerCase().includes(currentUsername)) {
+             displayWard = `<span style="${highlightStyle}">${displayWard}</span>`;
+        }
+        if (currentUsername && displayEr.toLowerCase().includes(currentUsername)) {
+             displayEr = `<span style="${highlightStyle}">${displayEr}</span>`;
+        }
+
         row.innerHTML = `
             <td><strong>${dateStr}</strong> ${isToday ? '<span style="color:green; font-size:0.8em;">(Today)</span>' : ''}</td>
-            <td>${duty.ward || '-'}</td>
-            <td>${duty.er || '-'}</td>
+            <td>${displayWard}</td>
+            <td>${displayEr}</td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-sm btn-edit" onclick="window.editDuty('${duty.id}')"><i class="fas fa-edit"></i></button>
