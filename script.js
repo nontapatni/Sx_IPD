@@ -287,8 +287,8 @@ window.switchTab = (tabName) => {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
-    // Default: Show Summary Section everywhere
-    document.getElementById('summary-section').style.display = 'block'; 
+    // Always show summary section except on schedule page
+    const summarySection = document.getElementById('summary-section');
 
     document.getElementById('patients-view').style.display = 'none';
     document.getElementById('mypatients-view').style.display = 'none';
@@ -303,7 +303,6 @@ window.switchTab = (tabName) => {
     }
     else if (tabName === 'schedule') {
         document.getElementById('schedule-view').style.display = 'block';
-        // ❌ Removed line that hides summary section
     }
 }
 
@@ -358,13 +357,9 @@ function renderSummary(data) {
         if (pt.status !== 'Discharged') stats[owner].active++;
     });
 
-    // ✅ ปรับการเรียงลำดับ (Sort Logic)
+    // ✅ Sort: Active (มาก->น้อย) -> Total (มาก->น้อย)
     const sortedStats = Object.entries(stats).sort(([, a], [, b]) => {
-        // 1. เรียงตาม Active Cases (มาก -> น้อย)
-        if (b.active !== a.active) {
-            return b.active - a.active;
-        }
-        // 2. ถ้า Active เท่ากัน ให้เรียงตาม Total Cases (มาก -> น้อย)
+        if (b.active !== a.active) return b.active - a.active;
         return b.total - a.total;
     });
 
@@ -388,59 +383,34 @@ function renderSummary(data) {
 function renderPatients(data) {
     if(!patientList) return;
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    const sortValue = sortSelect ? sortSelect.value : "ward_bed"; // Default เป็น Ward -> Bed
+    const sortValue = sortSelect ? sortSelect.value : "ward";
 
     let filteredData = data.filter(pt => {
         const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
         return searchStr.includes(keyword);
     });
 
-    // ✅ Multi-Level Sorting Logic
+    // Multi-Level Sorting
     filteredData.sort((a, b) => {
         const wardA = (a.ward || '').toLowerCase();
         const wardB = (b.ward || '').toLowerCase();
-        
         const bedA = (a.bed || '').toString();
         const bedB = (b.bed || '').toString();
-
         const ownerA = (a.owner || '').toLowerCase();
         const ownerB = (b.owner || '').toLowerCase();
-
         const dateA = new Date(a.date || 0);
         const dateB = new Date(b.date || 0);
 
         switch (sortValue) {
-            case 'ward_bed':
-                // เรียง Ward ก่อน
+            case 'ward': // Default: Ward -> Bed
                 if (wardA < wardB) return -1;
                 if (wardA > wardB) return 1;
-                // ถ้า Ward เท่ากัน ให้เรียงตาม Bed (แบบ Numeric: 2 มาก่อน 10)
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
-
             case 'bed':
-                // เรียงตาม Bed อย่างเดียว
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
-
-            case 'date_new':
-                // ใหม่ -> เก่า
-                return dateB - dateA;
-
-            case 'date_old':
-                // เก่า -> ใหม่
-                return dateA - dateB;
-
-            case 'owner_ward':
-                // เรียง Owner ก่อน
-                if (ownerA < ownerB) return -1;
-                if (ownerA > ownerB) return 1;
-                // ถ้า Owner เท่ากัน ให้เรียงตาม Ward
-                if (wardA < wardB) return -1;
-                if (wardA > wardB) return 1;
-                // ถ้า Ward เท่ากันอีก ให้เรียงตาม Bed
-                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
-
+            case 'date':
+                return dateB - dateA; // Newest first
             default:
-                // Default: Ward -> Bed
                 if (wardA < wardB) return -1;
                 if (wardA > wardB) return 1;
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
@@ -454,28 +424,26 @@ function renderPatients(data) {
     const activeCases = filteredData.filter(pt => pt.status !== 'Discharged');
     const dischargedCases = filteredData.filter(pt => pt.status === 'Discharged');
 
-    // --- Active Cases ---
+    // Active
     if (activeCases.length === 0) {
         patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
     } else {
         activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
     }
 
-    // --- Discharged Cases ---
+    // Discharged
     if (dischargedCases.length === 0) {
         dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
     } else {
         dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
     }
 
-    // --- ✅ New Cases (Last 24h) ---
+    // New Cases (Last 24h)
     if (newCasesList) {
         const now = new Date();
         const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-
         const recentCases = activeCases.filter(pt => {
             if (!pt.createdAt) return false;
-            // Handle Firestore Timestamp
             const createdDate = pt.createdAt.toDate ? pt.createdAt.toDate() : new Date(pt.createdAt.seconds * 1000);
             return createdDate >= oneDayAgo;
         });
@@ -548,7 +516,9 @@ function createPatientRow(pt, isActive) {
         <button class="btn-sm btn-delete" onclick="window.deleteCase('${pt.id}')"><i class="fas fa-trash"></i></button>
     `;
 
+    // Highlight Owner Name (New Logic)
     let displayOwner = pt.owner || '-';
+    // เช็คว่ามี Username และชื่อ Owner มีส่วนที่ตรงกันหรือไม่
     if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
          const highlightStyle = "font-weight: bold; color: #2980b9; background-color: #d6eaf8; padding: 2px 6px; border-radius: 4px; display: inline-block;";
          displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
@@ -742,19 +712,8 @@ window.openEditModal = (id) => {
     modal.style.display = 'block';
 }
 
-if(addBtn) addBtn.onclick = () => { 
-    admitForm.reset(); 
-    document.getElementById('edit-doc-id').value = ""; 
-    setInputAsToday('admitDate');
-    document.getElementById('modal-title').innerText = "New case"; 
-    modal.style.display = 'block'; 
-};
-if(addDutyBtn) addDutyBtn.onclick = () => { 
-    dutyForm.reset(); 
-    editingDutyId = null; 
-    setInputAsToday('duty-date');
-    dutyModal.style.display = 'block'; 
-};
+if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "New case"; modal.style.display = 'block'; };
+if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
 if(openCreateUserBtn) openCreateUserBtn.onclick = () => { 
     document.getElementById('create-user-form').reset(); 
     document.getElementById('create-user-msg').innerText = ""; 
