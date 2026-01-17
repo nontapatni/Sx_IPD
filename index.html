@@ -42,6 +42,11 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px;">
+                    <!-- ปุ่มเพิ่ม User (Admin Only) -->
+                    <button id="open-create-user-btn" class="btn-sm btn-add-user" style="display: none; padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-user-plus"></i> เพิ่มผู้ใช้
+                    </button>
+
                     <!-- ปุ่มเปลี่ยนรหัสผ่านตัวเอง -->
                     <button onclick="window.openChangePasswordModal()" class="btn-sm" style="background-color: #f39c12; color: white; padding: 8px 12px; font-size: 14px;">
                         <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
@@ -281,7 +286,27 @@
         </div>
     </div>
 
-    <!-- Modal 3: Change Password (Self) -->
+    <!-- Modal 3: Create User (Admin Only) -->
+    <div id="create-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('create-user-modal')">&times;</span>
+            <h2 style="color: #8e44ad;"><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ใหม่ (Add Staff)</h2>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="new-username" placeholder="เช่น resident1" required pattern="[a-zA-Z0-9_]+">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="text" id="new-password" placeholder="อย่างน้อย 6 ตัวอักษร" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-submit" style="background-color: #8e44ad;">สร้างบัญชี</button>
+                <div id="create-user-msg" style="margin-top:10px; font-size:0.9em;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Change Password (Self) -->
     <div id="change-password-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('change-password-modal')">&times;</span>

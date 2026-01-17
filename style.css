@@ -166,6 +166,15 @@ h1 { color: #2c3e50; margin-bottom: 5px; }
 .btn-primary { background-color: #3498db; color: white; }
 .btn-submit { background-color: #27ae60; color: white; width: 100%; margin-top: 10px; }
 
+/* เพิ่ม Class ปุ่ม Add User */
+.btn-add-user { 
+    background-color: #9b59b6; 
+    color: white; 
+}
+.btn-add-user:hover { 
+    background-color: #8e44ad; 
+}
+
 /* Table Actions */
 .action-buttons { display: flex; gap: 5px; }
 .btn-sm {

@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+// ✅ เพิ่ม createUserWithEmailAndPassword ใน import
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -21,6 +22,10 @@ const db = getFirestore(app);
 const COLLECTION_NAME = "patients";
 const SCHEDULE_COLLECTION = "schedules";
 
+// Secondary App สำหรับสร้าง User โดยไม่ Logout Admin
+const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = getAuth(secondaryApp);
+
 // --- AUTH VARIABLES ---
 const authScreen = document.getElementById('auth-screen');
 const appContainer = document.getElementById('app-container');
@@ -35,6 +40,12 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         console.log("Logged in:", user.email);
+        
+        // Check Admin -> Show Add User Button
+        const isAdmin = user.email === ("admin" + EMAIL_DOMAIN);
+        const addUserBtn = document.getElementById('open-create-user-btn');
+        if(addUserBtn) addUserBtn.style.display = isAdmin ? 'flex' : 'none';
+
         authScreen.style.display = 'none';
         appContainer.style.display = 'block';
         initApp(); 
@@ -62,6 +73,40 @@ loginForm.addEventListener('submit', async (e) => {
         authError.style.display = 'block';
     }
 });
+
+// CREATE USER LOGIC
+const createUserForm = document.getElementById('create-user-form');
+const createUserMsg = document.getElementById('create-user-msg');
+
+if (createUserForm) {
+    createUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('new-username').value.trim();
+        const password = document.getElementById('new-password').value;
+        const fakeEmail = username + EMAIL_DOMAIN;
+
+        createUserMsg.style.color = "blue";
+        createUserMsg.innerText = "กำลังสร้าง...";
+
+        try {
+            // สร้าง User ผ่าน Secondary App
+            await createUserWithEmailAndPassword(secondaryAuth, fakeEmail, password);
+            await signOut(secondaryAuth); // Sign out secondary immediately
+
+            createUserMsg.style.color = "green";
+            createUserMsg.innerText = `สร้าง user "${username}" สำเร็จ!`;
+            setTimeout(() => {
+                createUserForm.reset();
+                createUserMsg.innerText = "";
+                window.closeModal('create-user-modal');
+            }, 1500);
+        } catch (error) {
+            console.error(error);
+            createUserMsg.style.color = "red";
+            createUserMsg.innerText = getErrorMessage(error.code);
+        }
+    });
+}
 
 // CHANGE PASSWORD (SELF)
 const changePassForm = document.getElementById('change-password-form');
@@ -99,7 +144,8 @@ function getErrorMessage(code) {
         case 'auth/wrong-password': return "รหัสผ่านไม่ถูกต้อง";
         case 'auth/email-already-in-use': return "ชื่อผู้ใช้นี้มีคนใช้แล้ว";
         case 'auth/weak-password': return "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
-        default: return "Error: " + code;
+        case 'auth/invalid-credential': return "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        default: return "เกิดข้อผิดพลาด: " + code;
     }
 }
 
@@ -123,6 +169,8 @@ const dutyForm = document.getElementById('duty-form');
 
 const importExcelBtn = document.getElementById('import-excel-btn');
 const excelInput = document.getElementById('excel-file');
+
+const openCreateUserBtn = document.getElementById('open-create-user-btn');
 
 let allPatientsData = [];
 let allDutiesData = [];
@@ -406,9 +454,15 @@ window.openEditModal = (id) => {
 
 if(addBtn) addBtn.onclick = () => { admitForm.reset(); document.getElementById('edit-doc-id').value = ""; document.getElementById('admitDate').valueAsDate = new Date(); document.getElementById('modal-title').innerText = "รับเคสใหม่"; modal.style.display = 'block'; };
 if(addDutyBtn) addDutyBtn.onclick = () => { dutyForm.reset(); editingDutyId = null; document.getElementById('duty-date').valueAsDate = new Date(); dutyModal.style.display = 'block'; };
+if(openCreateUserBtn) openCreateUserBtn.onclick = () => { 
+    document.getElementById('create-user-form').reset(); 
+    document.getElementById('create-user-msg').innerText = ""; 
+    document.getElementById('create-user-modal').style.display = 'block'; 
+};
 
 window.onclick = (e) => {
     if (e.target == modal) window.closeModal('modal');
     if (e.target == dutyModal) window.closeModal('duty-modal');
+    if (e.target == document.getElementById('create-user-modal')) window.closeModal('create-user-modal');
     if (e.target == document.getElementById('change-password-modal')) window.closeModal('change-password-modal');
 }
