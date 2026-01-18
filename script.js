@@ -707,10 +707,14 @@ if (importExcelBtn && excelInput) {
 
                     let dateStr = "";
                     const rawDate = row[dateKey];
-                    if (rawDate instanceof Date) dateStr = rawDate.toISOString().split('T')[0];
-                    else if (typeof rawDate === 'string') dateStr = rawDate.trim();
-                    else if (typeof rawDate === 'number') {
-                         const jsDate = new Date((rawDate - (25567 + 1)) * 86400 * 1000);
+                    // ✅ FIXED: Date calculation +12h offset logic
+                    if (rawDate instanceof Date) {
+                         const adjustedDate = new Date(rawDate.getTime() + (12 * 60 * 60 * 1000));
+                         dateStr = adjustedDate.toISOString().split('T')[0];
+                    } else if (typeof rawDate === 'string') {
+                        dateStr = rawDate.trim();
+                    } else if (typeof rawDate === 'number') {
+                         const jsDate = new Date(Math.round((rawDate - 25569) * 86400 * 1000) + (12 * 60 * 60 * 1000));
                          dateStr = jsDate.toISOString().split('T')[0];
                     }
 
