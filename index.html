@@ -39,7 +39,7 @@
             <header class="main-header">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
-                    <p></p>
+                    <p>ระบบบริหารจัดการคนไข้วอร์ดศัลยกรรม (Real-time DB)</p>
                 </div>
                 
                 <div class="header-user-section">
@@ -115,12 +115,18 @@
                     </button>
 
                     <div class="controls-right">
+                        <button id="export-patient-btn" class="btn" style="background-color: #27ae60; color: white;">
+                            <i class="fas fa-file-excel"></i> Export
+                        </button>
+
                         <div class="sort-box">
                             <i class="fas fa-sort sort-icon"></i>
                             <select id="sort-patients">
-                                <option value="ward">Sort by Ward</option>
+                                <option value="ward_bed">Sort by Ward → Bed</option>
                                 <option value="bed">Sort by Bed</option>
-                                <option value="date">Sort by Date of Admission</option>
+                                <option value="date_new">Sort by Admit Date (ใหม่ → เก่า)</option>
+                                <option value="date_old">Sort by Admit Date (เก่า → ใหม่)</option>
+                                <option value="owner_ward">Sort by Owner → Ward</option>
                             </select>
                         </div>
 

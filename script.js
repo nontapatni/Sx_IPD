@@ -424,27 +424,54 @@ function renderPatients(data) {
         return searchStr.includes(keyword);
     });
 
-    // Multi-Level Sorting
+    // ✅ Multi-Level Sorting Logic (ปรับปรุงใหม่)
     filteredData.sort((a, b) => {
+        // เตรียมค่าสำหรับเปรียบเทียบ
         const wardA = (a.ward || '').toLowerCase();
         const wardB = (b.ward || '').toLowerCase();
+        
+        // Bed แปลงเป็น String เพื่อเทียบ (ถ้าจะเทียบเลขต้องใช้ option numeric: true)
         const bedA = (a.bed || '').toString();
         const bedB = (b.bed || '').toString();
+
         const ownerA = (a.owner || '').toLowerCase();
         const ownerB = (b.owner || '').toLowerCase();
+
         const dateA = new Date(a.date || 0);
         const dateB = new Date(b.date || 0);
 
         switch (sortValue) {
-            case 'ward': // Default: Ward -> Bed
+            case 'ward_bed':
+                // เรียง Ward ก่อน
                 if (wardA < wardB) return -1;
                 if (wardA > wardB) return 1;
+                // ถ้า Ward เท่ากัน ให้เรียงตาม Bed (แบบ Numeric: 2 มาก่อน 10)
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+
             case 'bed':
+                // เรียงตาม Bed อย่างเดียว
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
-            case 'date':
-                return dateB - dateA; // Newest first
+
+            case 'date_new':
+                // วันที่ ใหม่ -> เก่า
+                return dateB - dateA;
+
+            case 'date_old':
+                // วันที่ เก่า -> ใหม่
+                return dateA - dateB;
+            
+            case 'owner_ward':
+                // เรียง Owner ก่อน
+                if (ownerA < ownerB) return -1;
+                if (ownerA > ownerB) return 1;
+                // ถ้า Owner เท่ากัน เรียง Ward
+                if (wardA < wardB) return -1;
+                if (wardA > wardB) return 1;
+                // ถ้า Ward เท่ากันอีก เรียง Bed
+                return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
+
             default:
+                // Default: Ward -> Bed
                 if (wardA < wardB) return -1;
                 if (wardA > wardB) return 1;
                 return bedA.localeCompare(bedB, undefined, {numeric: true, sensitivity: 'base'});
