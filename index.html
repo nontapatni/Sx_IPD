@@ -35,7 +35,6 @@
     <!-- 🏥 MAIN APP -->
     <div id="app-container">
         <div class="container">
-            <!-- ✅ เปลี่ยน Header ใช้ Class แทน Inline Style -->
             <header class="main-header">
                 <div>
                     <h1>🏥 Sx IPD Ward Manager</h1>
@@ -44,10 +43,7 @@
                 
                 <div class="header-user-section">
                     
-                    <!-- บรรทัดที่ 1: ชื่อผู้ใช้ -->
                     <div id="user-info"></div>
-
-                    <!-- บรรทัดที่ 2: กลุ่มปุ่มต่างๆ -->
                     <div class="header-btn-group">
                         <!-- ปุ่ม Dark Mode -->
                         <button id="toggle-dark-mode" class="btn-sm" style="background-color: #555; color: white; padding: 8px 12px; font-size: 14px;" title="Dark Mode">
@@ -77,7 +73,7 @@
             <div id="summary-section" style="margin-bottom: 20px;">
                 <div class="card summary-card-style" style="border-left: 4px solid #27ae60;">
                     <div style="padding-bottom: 10px; font-weight: bold; color: #555; border-bottom: 1px solid #eee; margin-bottom: 10px;">
-                        <i class="fas fa-chart-bar"></i> สรุปยอดคนไข้ (Active Cases by Owner)
+                        <i class="fas fa-chart-bar"></i> Summary stat
                     </div>
                     <table id="summary-table">
                         <thead>
@@ -94,7 +90,7 @@
                 </div>
             </div>
 
-            <!-- 🟢 TAB NAVIGATION -->
+            <!-- TAB NAVIGATION -->
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="window.switchTab('patients')">
                     <i class="fas fa-procedures"></i> All Patients

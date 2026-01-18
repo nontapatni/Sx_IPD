@@ -37,7 +37,7 @@ const EMAIL_DOMAIN = "@ward.local";
 let currentUser = null;
 let currentUsername = "";
 
-// ✅ DARK MODE LOGIC
+// DARK MODE LOGIC
 const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
 
 // ฟังก์ชันเปิด/ปิด และบันทึก
@@ -215,14 +215,14 @@ function loadDropdownSettings() {
         // Default Data
         if (!docSnap.exists()) {
             data = {
-                wards: ["Sx ชาย", "Sx หญิง", "Burn Unit", "SICU", "Trauma", "Private"],
-                owners: ["อ.สมศักดิ์", "อ.วิชัย", "อ.ปราณี", "R4 Somjai", "R3 Somsri", "R2 Sompong", "R1 Nontapat"]
+                wards: ["Sx ชาย", "Sx หญิง"],
+                owners: ["Phone", "Ice", "Jeng", "Pai", "Sunny", "Title", "Pol"]
             };
             setDoc(docRef, data); 
         } else if (!data.owners) {
             // Migration for old data
             const combined = [...(data.staff || []), ...(data.residents || [])];
-            data.owners = combined.length ? combined : ["อ.สมศักดิ์", "R1 Nontapat"];
+            data.owners = combined.length ? combined : ["", ""];
         }
 
         updateSelectOptions('ward', data.wards);
