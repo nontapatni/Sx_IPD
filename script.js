@@ -303,7 +303,7 @@ let allPatientsData = [];
 let allDutiesData = [];
 let editingDutyId = null;
 
-// ✅ Helper function to set input value to "Today" (Local Time)
+// Helper function to set input value to "Today" (Local Time)
 function setInputAsToday(elementId) {
     const el = document.getElementById(elementId);
     if (el) {
@@ -424,7 +424,7 @@ function renderPatients(data) {
         return searchStr.includes(keyword);
     });
 
-    // ✅ Multi-Level Sorting Logic (ปรับปรุงใหม่)
+    // Multi-Level Sorting Logic (ปรับปรุงใหม่)
     filteredData.sort((a, b) => {
         // เตรียมค่าสำหรับเปรียบเทียบ
         const wardA = (a.ward || '').toLowerCase();
@@ -774,7 +774,7 @@ if(addBtn) {
     addBtn.onclick = () => { 
         admitForm.reset(); 
         document.getElementById('edit-doc-id').value = ""; 
-        // ✅ ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal
+        // ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal
         setInputAsToday('admitDate');
         document.getElementById('modal-title').innerText = "New case"; 
         modal.style.display = 'block'; 
@@ -783,7 +783,7 @@ if(addBtn) {
 if(addDutyBtn) addDutyBtn.onclick = () => { 
     dutyForm.reset(); 
     editingDutyId = null; 
-    // ✅ ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal ลงเวร
+    // ตั้งค่าวันที่เป็นวันนี้เมื่อเปิด Modal ลงเวร
     setInputAsToday('duty-date');
     dutyModal.style.display = 'block'; 
 };
