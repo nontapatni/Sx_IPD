@@ -269,13 +269,16 @@ th, td {
 }
 th { background-color: #f8f9fa; color: #555; font-weight: 600; white-space: nowrap; }
 
-/* ✅ FIX: Summary Table for Mobile (ไม่ต้อง Scroll) */
-table#summary-table {
+/* ✅ FIX: Summary & Schedule Table for Mobile (ไม่ต้อง Scroll) */
+table#summary-table,
+table#schedule-table { 
     min-width: auto; /* ปลดล็อกความกว้างขั้นต่ำ */
     width: 100%;     /* เต็มจอ */
 }
 table#summary-table th, 
-table#summary-table td {
+table#summary-table td,
+table#schedule-table th, 
+table#schedule-table td {
     padding: 10px 5px; /* ลด padding ด้านข้าง */
     white-space: normal; /* ให้ข้อความตัดคำลงบรรทัดใหม่ได้ */
 }
