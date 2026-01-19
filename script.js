@@ -458,8 +458,6 @@ function renderQueue() {
     });
 }
 
-
-
 // --- RENDER SUMMARY ---
 function renderSummary(data) {
     if(!summaryList) return;
