@@ -730,10 +730,21 @@ function getWardColor(wardName) {
     return color;
 }
 
-
-
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
+    row.style.cursor = 'pointer';
+    row.title = 'Click to copy patient info';
+
+    row.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+
+        copyPatientRow(pt);
+
+        row.classList.add('row-copied');
+        setTimeout(() => row.classList.remove('row-copied'), 600); 
+    });
+
+
     let actionButtons = isActive ? `
         <button class="btn-sm btn-edit" onclick="window.openEditModal('${pt.id}')"><i class="fas fa-edit"></i></button>
         <button class="btn-sm btn-dc" onclick="window.dischargeCase('${pt.id}')">D/C</button>
@@ -975,4 +986,21 @@ window.onclick = (e) => {
     if (e.target == document.getElementById('create-user-modal')) window.closeModal('create-user-modal');
     if (e.target == document.getElementById('change-password-modal')) window.closeModal('change-password-modal');
     if (e.target == document.getElementById('settings-modal')) window.closeModal('settings-modal');
+}
+
+function copyPatientRow(pt) {
+    const ward = pt.ward || '-';
+    const bed = pt.bed || '-';
+    const hn = pt.hn || '-';
+    const name = pt.name || '-';
+
+    const text = `${ward}-${bed} HN:${hn} ${name}`;
+
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            console.log('Copied:', text);
+        })
+        .catch(err => {
+            console.error('Copy failed', err);
+        });
 }

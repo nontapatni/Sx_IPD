@@ -506,3 +506,8 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
         box-shadow: 0 0 0 0 rgba(39,174,96,0);
     }
 }
+
+.row-copied {
+    background-color: #eafaf1 !important;
+    transition: background-color 0.3s;
+}
