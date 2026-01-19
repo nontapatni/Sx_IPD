@@ -565,6 +565,29 @@ if(exportBtn) {
     }
 }
 
+function getWardColor(wardName) {
+            if (!wardName) return "#eee";
+            
+            // 1. ตรวจสอบชื่อวอร์ดที่พบบ่อย (Smart Detection)
+            const name = wardName.toLowerCase();
+            // วอร์ดชาย (สีฟ้าพาสเทล)
+            if(name.includes('ชาย') || name.includes('male') || name.includes('man')) return '#d6eaf8'; 
+            // วอร์ดหญิง (สีชมพูพาสเทล)
+            if(name.includes('หญิง') || name.includes('female') || name.includes('woman')) return '#fadbd8'; 
+            // ICU (สีเหลืองพาสเทล)
+            if(name.includes('icu') || name.includes('critical')) return '#fcf3cf'; 
+            // VIP/พิเศษ (สีเขียวพาสเทล)
+            if(name.includes('vip') || name.includes('พิเศษ')) return '#d5f5e3'; 
+
+            // 2. ถ้าไม่ตรงกับคีย์เวิร์ด ให้สุ่มสีจากตัวอักษร (Auto Hash)
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash % 360); 
+            return `hsl(${hue}, 70%, 80%)`; 
+        }
+
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
     let actionButtons = isActive ? `
@@ -583,8 +606,13 @@ function createPatientRow(pt, isActive) {
          displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
     }
 
+    // Apply Ward Color Badge
+    const wardBg = getWardColor(pt.ward);
+    const wardBadge = `<span style="background-color: ${wardBg}; color: #2c3e50; padding: 4px 8px; border-radius: 6px; font-weight: bold; display: inline-block; min-width: 60px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${pt.ward || '-'}</span>`;
+
+
     row.innerHTML = `
-        <td><strong>${pt.ward || '-'}</strong></td>
+        <td>${wardBadge}</td>
         <td><div style="font-size:1.1em;">${pt.bed || '?'}</div></td>
         <td>${pt.date || '-'}</td>
         <td><div><strong>HN:</strong> ${pt.hn || '-'}</div><div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div></td>
