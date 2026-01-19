@@ -489,7 +489,7 @@ function renderSummary(data) {
 
     // 🔥 กลับลำดับ
     return idxB - idxA;
-});
+    });
 
     if (sortedStats.length === 0) {
         summaryList.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data available</td></tr>';
@@ -506,30 +506,34 @@ function renderSummary(data) {
         summaryList.appendChild(row);
     });
 
-        // ⭐ HIGHLIGHT คนสุดท้าย (ถึงคิว)
+    // ⭐ HIGHLIGHT คนสุดท้าย เฉพาะ user ที่ login อยู่
     const rows = summaryList.querySelectorAll('tr');
-    if (rows.length > 0) {
+    if (rows.length > 0 && currentUsername) {
         const lastRow = rows[rows.length - 1];
         const ownerCell = lastRow.querySelector('td');
 
-        lastRow.style.backgroundColor = '#eafaf1';
-        lastRow.style.borderLeft = '4px solid #27ae60';
+        const ownerName = ownerCell.textContent.trim().toLowerCase();
+        const currentUser = currentUsername.trim().toLowerCase();
 
-        ownerCell.innerHTML = `
-            <span style="
-                background-color: #27ae60;
-                color: white;
-                padding: 4px 10px;
-                border-radius: 14px;
-                font-weight: bold;
-                display: inline-block;
-                animation: pulse 1.5s infinite;
-            ">
-                🔔 ${ownerCell.textContent}
-            </span>
-        `;
+        if (ownerName === currentUser) {
+            lastRow.style.backgroundColor = '#eafaf1';
+            lastRow.style.borderLeft = '4px solid #27ae60';
+
+            ownerCell.innerHTML = `
+                <span style="
+                    background-color: #27ae60;
+                    color: white;
+                    padding: 4px 10px;
+                    border-radius: 14px;
+                    font-weight: bold;
+                    display: inline-block;
+                    animation: pulse 1.5s infinite;
+                ">
+                    🔔 You're next (${ownerCell.textContent})
+                </span>
+            `;
+        }
     }
-
 }
 
 // --- RENDER ALL PATIENTS ---
