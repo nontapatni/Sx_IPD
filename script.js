@@ -304,7 +304,30 @@ let allDutiesData = [];
 let editingDutyId = null;
 
 const wardColorMap = {};
-const usedHues = new Set();
+const usedColorIndexes = new Set();
+
+const WARD_COLOR_PALETTE = [
+    '#f4a6b8', // rose pink
+    '#f6b28e', // peach
+    '#f5d76e', // soft yellow
+    '#bfe3b4', // soft green
+    '#9fe0c3', // mint
+    '#9cc9e8', // sky blue
+    '#b3c7f9', // periwinkle
+    '#c9b6e4', // lavender
+    '#e5a9d6', // lilac
+    '#f0b7d3', // rose
+    '#9fdad7', // aqua
+    '#a8e0c6', // seafoam
+    '#f2e1a6', // cream
+    '#c7b7e2', // violet
+    '#b8d1e6', // blue gray
+    '#f2b3a3', // coral
+    '#a6dfc2', // jade
+    '#f7e29c', // butter
+    '#d7b9e8', // orchid
+    '#a9cfe8'  // ice blue
+];
 
 // Helper function to set input value to "Today" (Local Time)
 function setInputAsToday(elementId) {
@@ -593,35 +616,49 @@ if(exportBtn) {
     }
 }
 
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+}
+
 function getWardColor(wardName) {
-    if (!wardName) return "#eee";
+    if (!wardName) return '#eee';
 
     const name = wardName.toLowerCase().trim();
 
-    // --- Smart Detection ---
+    // --- สีพิเศษ (fix ตามความหมาย) ---
     if (name.includes('ชาย')) return '#d6eaf8';
     if (name.includes('หญิง')) return '#fadbd8';
     if (name.includes('icu')) return '#fcf3cf';
     if (name.includes('vip') || name.includes('พิเศษ')) return '#d5f5e3';
 
-    // เคยสร้างแล้ว → ใช้สีเดิม
+    // เคย assign แล้ว → ใช้สีเดิม
     if (wardColorMap[name]) return wardColorMap[name];
 
-    // 🔥 สุ่ม hue แบบไม่ชน
-    let hue;
+    // 🔢 คำนวณ index จาก hash
+    const baseIndex = hashString(name) % WARD_COLOR_PALETTE.length;
+
+    // 🔁 ถ้าชน → ขยับไปเรื่อย ๆ จนกว่าจะเจอสีว่าง
+    let index = baseIndex;
     let guard = 0;
-    do {
-        hue = Math.floor(Math.random() * 360);
+
+    while (usedColorIndexes.has(index) && guard < WARD_COLOR_PALETTE.length) {
+        index = (index + 1) % WARD_COLOR_PALETTE.length;
         guard++;
-    } while (usedHues.has(hue) && guard < 100);
+    }
 
-    usedHues.add(hue);
-
-    const color = `hsl(${hue}, 80%, 75%)`;
+    usedColorIndexes.add(index);
+    const color = WARD_COLOR_PALETTE[index];
     wardColorMap[name] = color;
 
     return color;
 }
+
+
 
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
