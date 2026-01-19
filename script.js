@@ -566,27 +566,31 @@ if(exportBtn) {
 }
 
 function getWardColor(wardName) {
-            if (!wardName) return "#eee";
-            
-            // 1. ตรวจสอบชื่อวอร์ดที่พบบ่อย (Smart Detection)
-            const name = wardName.toLowerCase();
-            // วอร์ดชาย (สีฟ้าพาสเทล)
-            if(name.includes('ชาย') || name.includes('male') || name.includes('man')) return '#d6eaf8'; 
-            // วอร์ดหญิง (สีชมพูพาสเทล)
-            if(name.includes('หญิง') || name.includes('female') || name.includes('woman')) return '#fadbd8'; 
-            // ICU (สีเหลืองพาสเทล)
-            if(name.includes('icu') || name.includes('critical')) return '#fcf3cf'; 
-            // VIP/พิเศษ (สีเขียวพาสเทล)
-            if(name.includes('vip') || name.includes('พิเศษ')) return '#d5f5e3'; 
+    if (!wardName) return "#eee";
 
-            // 2. ถ้าไม่ตรงกับคีย์เวิร์ด ให้สุ่มสีจากตัวอักษร (Auto Hash)
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const hue = Math.abs(hash % 360); 
-            return `hsl(${hue}, 70%, 80%)`; 
-        }
+    const name = wardName.toLowerCase().trim();
+
+    // --- Smart Detection ก่อน ---
+    if (name.includes('ชาย')) return '#d6eaf8';
+    if (name.includes('หญิง')) return '#fadbd8';
+    if (name.includes('icu')) return '#fcf3cf';
+    if (name.includes('vip') || name.includes('พิเศษ')) return '#d5f5e3';
+
+    // --- 🔥 สร้าง seed จากชื่อวอร์ด ---
+    let seed = 0;
+    for (let i = 0; i < name.length; i++) {
+        seed += name.charCodeAt(i);
+    }
+
+    // --- 🌈 Golden Angle ---
+    const goldenAngle = 137.508;
+
+    // กระโดดสีให้ห่างกันจริง
+    const hue = (seed * goldenAngle) % 360;
+
+    // saturation / lightness คงที่ อ่านง่าย
+    return `hsl(${hue}, 75%, 78%)`;
+}
 
 function createPatientRow(pt, isActive) {
     const row = document.createElement('tr');
