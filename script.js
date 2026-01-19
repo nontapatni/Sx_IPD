@@ -505,6 +505,31 @@ function renderSummary(data) {
         `;
         summaryList.appendChild(row);
     });
+
+        // ⭐ HIGHLIGHT คนสุดท้าย (ถึงคิว)
+    const rows = summaryList.querySelectorAll('tr');
+    if (rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        const ownerCell = lastRow.querySelector('td');
+
+        lastRow.style.backgroundColor = '#eafaf1';
+        lastRow.style.borderLeft = '4px solid #27ae60';
+
+        ownerCell.innerHTML = `
+            <span style="
+                background-color: #27ae60;
+                color: white;
+                padding: 4px 10px;
+                border-radius: 14px;
+                font-weight: bold;
+                display: inline-block;
+                animation: pulse 1.5s infinite;
+            ">
+                🔔 ${ownerCell.textContent}
+            </span>
+        `;
+    }
+
 }
 
 // --- RENDER ALL PATIENTS ---
