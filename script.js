@@ -303,6 +303,9 @@ let allPatientsData = [];
 let allDutiesData = [];
 let editingDutyId = null;
 
+const wardColorMap = {};
+const usedHues = new Set();
+
 // Helper function to set input value to "Today" (Local Time)
 function setInputAsToday(elementId) {
     const el = document.getElementById(elementId);
@@ -384,6 +387,16 @@ function renderSummary(data) {
     if(!summaryList) return;
     summaryList.innerHTML = '';
 
+    const queueOrder = [
+        'title',
+        'sunny',
+        'jeng',
+        'pai',
+        'phone',
+        'pol',
+        'ice'
+    ];
+
     const stats = {};
     data.forEach(pt => {
         const owner = pt.owner ? pt.owner.trim() : 'Unassigned';
@@ -392,10 +405,25 @@ function renderSummary(data) {
         if (pt.status !== 'Discharged') stats[owner].active++;
     });
 
-    const sortedStats = Object.entries(stats).sort(([, a], [, b]) => {
-        if (b.active !== a.active) return b.active - a.active;
-        return b.total - a.total;
-    });
+    const sortedStats = Object.entries(stats).sort(([ownerA, a], [ownerB, b]) => {
+    // 1. Active มาก -> บน
+    if (b.active !== a.active) return b.active - a.active;
+
+    // 2. Total มาก -> บน
+    if (b.total !== a.total) return b.total - a.total;
+
+    // 3. Queue (กลับด้าน: คิวแรกอยู่ล่าง)
+    const idxA = queueOrder.indexOf(ownerA.toLowerCase());
+    const idxB = queueOrder.indexOf(ownerB.toLowerCase());
+
+    // คนที่ไม่อยู่ในคิว -> ล่างสุด
+    if (idxA === -1 && idxB === -1) return 0;
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+
+    // 🔥 กลับลำดับ
+    return idxB - idxA;
+});
 
     if (sortedStats.length === 0) {
         summaryList.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data available</td></tr>';
@@ -570,26 +598,29 @@ function getWardColor(wardName) {
 
     const name = wardName.toLowerCase().trim();
 
-    // --- Smart Detection ก่อน ---
+    // --- Smart Detection ---
     if (name.includes('ชาย')) return '#d6eaf8';
     if (name.includes('หญิง')) return '#fadbd8';
     if (name.includes('icu')) return '#fcf3cf';
     if (name.includes('vip') || name.includes('พิเศษ')) return '#d5f5e3';
 
-    // --- 🔥 สร้าง seed จากชื่อวอร์ด ---
-    let seed = 0;
-    for (let i = 0; i < name.length; i++) {
-        seed += name.charCodeAt(i);
-    }
+    // เคยสร้างแล้ว → ใช้สีเดิม
+    if (wardColorMap[name]) return wardColorMap[name];
 
-    // --- 🌈 Golden Angle ---
-    const goldenAngle = 137.508;
+    // 🔥 สุ่ม hue แบบไม่ชน
+    let hue;
+    let guard = 0;
+    do {
+        hue = Math.floor(Math.random() * 360);
+        guard++;
+    } while (usedHues.has(hue) && guard < 100);
 
-    // กระโดดสีให้ห่างกันจริง
-    const hue = (seed * goldenAngle) % 360;
+    usedHues.add(hue);
 
-    // saturation / lightness คงที่ อ่านง่าย
-    return `hsl(${hue}, 75%, 78%)`;
+    const color = `hsl(${hue}, 80%, 75%)`;
+    wardColorMap[name] = color;
+
+    return color;
 }
 
 function createPatientRow(pt, isActive) {
