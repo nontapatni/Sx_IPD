@@ -303,6 +303,16 @@ let allPatientsData = [];
 let allDutiesData = [];
 let editingDutyId = null;
 
+const queueOrder = [
+        'title',
+        'sunny',
+        'jeng',
+        'pai',
+        'phone',
+        'pol',
+        'ice'
+    ];
+
 const wardColorMap = {};
 const usedColorIndexes = new Set();
 
@@ -383,6 +393,8 @@ function initApp() {
         renderPatients(allPatientsData);
         renderMyPatients(allPatientsData);
         renderSummary(allPatientsData);
+        renderQueue();
+
     }, (error) => {
         console.error(error);
         if(patientList) patientList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error loading patients: ${error.message}</td></tr>`;
@@ -405,20 +417,53 @@ function initApp() {
     });
 }
 
+function renderQueue() {
+    const queueList = document.getElementById('queue-list');
+    if (!queueList) return;
+
+    queueList.innerHTML = '';
+    queueList.style.display = 'flex';
+    queueList.style.alignItems = 'center';
+    queueList.style.flexWrap = 'wrap'; // กันล้นจอมือถือ
+
+    queueOrder.forEach((name, index) => {
+        // badge
+        const badge = document.createElement('span');
+        badge.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+        badge.style.cssText = `
+            background-color: #ebf5fb;
+            color: #2c3e50;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        `;
+        queueList.appendChild(badge);
+
+        // arrow
+        if (index < queueOrder.length - 1) {
+            const arrow = document.createElement('span');
+            arrow.textContent = '→';
+            arrow.style.cssText = `
+                margin: 0 6px;
+                font-size: 18px;
+                font-weight: bold;
+                color: #7f8c8d;
+                display: flex;
+                align-items: center;
+            `;
+            queueList.appendChild(arrow);
+        }
+    });
+}
+
+
+
 // --- RENDER SUMMARY ---
 function renderSummary(data) {
     if(!summaryList) return;
     summaryList.innerHTML = '';
-
-    const queueOrder = [
-        'title',
-        'sunny',
-        'jeng',
-        'pai',
-        'phone',
-        'pol',
-        'ice'
-    ];
 
     const stats = {};
     data.forEach(pt => {
