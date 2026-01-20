@@ -786,7 +786,7 @@ function createPatientRow(pt, isActive) {
     // Logic แสดง Attending ตัวเล็กใต้ Owner
     let attendingHtml = '';
     if (pt.attending) {
-        attendingHtml = `<div style="font-size: 0.8em; color: #95a5a6; margin-top: 2px;">(Staff: ${pt.attending})</div>`;
+        attendingHtml = `<div style="font-size: 0.8em; color: #95a5a6; margin-top: 2px;">${pt.attending}</div>`;
     }
 
     if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
