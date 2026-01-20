@@ -216,23 +216,33 @@ function loadDropdownSettings() {
         if (!docSnap.exists()) {
             data = {
                 wards: ["Sx ชาย", "Sx หญิง"],
-                owners: ["Phone", "Ice", "Jeng", "Pai", "Sunny", "Title", "Pol"]
+                owners: ["Phone", "Ice", "Jeng", "Pai", "Sunny", "Title", "Pol"],
+                attendings: ["อ.สมชาย", "อ.วิภา"] // Default staff
             };
             setDoc(docRef, data); 
-        } else if (!data.owners) {
-            // Migration for old data
-            const combined = [...(data.staff || []), ...(data.residents || [])];
-            data.owners = combined.length ? combined : ["", ""];
+        } else {
+             // Migration check
+             if (!data.owners) {
+                const combined = [...(data.staff || []), ...(data.residents || [])];
+                data.owners = combined.length ? combined : ["", ""];
+             }
+             if (!data.attendings) {
+                data.attendings = ["อ.Staff1", "อ.Staff2"];
+             }
         }
 
         updateSelectOptions('ward', data.wards);
         updateSelectOptions('owner', data.owners);
+        updateSelectOptions('attending', data.attendings); // Update Attending Dropdown
 
         if(document.getElementById('settings-wards')) 
             document.getElementById('settings-wards').value = (data.wards || []).join('\n');
         
         if(document.getElementById('settings-owners')) 
             document.getElementById('settings-owners').value = (data.owners || []).join('\n');
+
+        if(document.getElementById('settings-attendings')) 
+            document.getElementById('settings-attendings').value = (data.attendings || []).join('\n');
     });
 }
 
@@ -240,7 +250,12 @@ function updateSelectOptions(selectId, items) {
     const select = document.getElementById(selectId);
     if(!select || !items) return;
     const currentVal = select.value;
-    select.innerHTML = `<option value="">- select ${selectId} -</option>`;
+    // เลือกข้อความให้เหมาะสมตาม ID
+    let placeholder = "- select -";
+    if (selectId === 'attending') placeholder = "-- Select Staff --";
+    if (selectId === 'owner') placeholder = "-- Select Owner --";
+
+    select.innerHTML = `<option value="">${placeholder}</option>`;
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -255,10 +270,11 @@ if (settingsForm) {
         e.preventDefault();
         const wards = document.getElementById('settings-wards').value.split('\n').map(s => s.trim()).filter(s => s);
         const owners = document.getElementById('settings-owners').value.split('\n').map(s => s.trim()).filter(s => s);
+        const attendings = document.getElementById('settings-attendings').value.split('\n').map(s => s.trim()).filter(s => s);
 
         try {
             await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), {
-                wards, owners, updatedAt: serverTimestamp()
+                wards, owners, attendings, updatedAt: serverTimestamp()
             });
             alert("บันทึกการตั้งค่าเรียบร้อย!");
             window.closeModal('settings-modal');
@@ -373,7 +389,6 @@ window.switchTab = (tabName) => {
     }
     else if (tabName === 'schedule') {
         document.getElementById('schedule-view').style.display = 'block';
-        // ❌ Removed line that hides summary section
     }
 }
 
@@ -397,7 +412,7 @@ function initApp() {
 
     }, (error) => {
         console.error(error);
-        if(patientList) patientList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error loading patients: ${error.message}</td></tr>`;
+        if(patientList) patientList.innerHTML = `<tr><td colspan="10" style="text-align:center; color:red;">Error loading patients: ${error.message}</td></tr>`;
     });
 
     // 2. Schedule Listener
@@ -543,7 +558,7 @@ function renderPatients(data) {
     const sortValue = sortSelect ? sortSelect.value : "ward";
 
     let filteredData = data.filter(pt => {
-        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag}`.toLowerCase();
+        const searchStr = `${pt.ward} ${pt.hn} ${pt.an} ${pt.name} ${pt.bed} ${pt.diag} ${pt.attending || ''}`.toLowerCase();
         return searchStr.includes(keyword);
     });
 
@@ -610,14 +625,14 @@ function renderPatients(data) {
 
     // Active
     if (activeCases.length === 0) {
-        patientList.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
+        patientList.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px;">There is 0 case 🎉</td></tr>';
     } else {
         activeCases.forEach(pt => patientList.appendChild(createPatientRow(pt, true)));
     }
 
     // Discharged
     if (dischargedCases.length === 0) {
-        dischargedList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>';
+        dischargedList.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No discharged history</td></tr>';
     } else {
         dischargedCases.forEach(pt => dischargedList.appendChild(createPatientRow(pt, false)));
     }
@@ -633,7 +648,7 @@ function renderPatients(data) {
         });
 
         if (recentCases.length === 0) {
-            newCasesList.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>';
+            newCasesList.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>';
         } else {
             recentCases.forEach(pt => newCasesList.appendChild(createPatientRow(pt, true)));
         }
@@ -656,14 +671,14 @@ function renderMyPatients(data) {
     const myDischargedCases = myCases.filter(pt => pt.status === 'Discharged');
 
     if (myActiveCases.length === 0) {
-        myPatientsList.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">You have 0 case 🎉</td></tr>`;
+        myPatientsList.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 20px;">You have 0 case 🎉</td></tr>`;
     } else {
         myActiveCases.forEach(pt => myPatientsList.appendChild(createPatientRow(pt, true)));
     }
 
     if(myPatientsDischargedList) {
         if (myDischargedCases.length === 0) {
-            myPatientsDischargedList.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>`;
+            myPatientsDischargedList.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#999;">No discharged history</td></tr>`;
         } else {
             myDischargedCases.forEach(pt => myPatientsDischargedList.appendChild(createPatientRow(pt, false)));
         }
@@ -677,7 +692,19 @@ if(exportBtn) {
     exportBtn.onclick = () => {
         if (allPatientsData.length === 0) { alert("No data to Export"); return; }
         const exportData = allPatientsData.map(pt => ({
-            Status: pt.status || 'Active', Ward: pt.ward, Bed: pt.bed, Date: pt.date, HN: pt.hn, AN: pt.an, Name: pt.name, Age: pt.age, Gender: pt.gender, Diagnosis: pt.diag, Owner: pt.owner, Note: pt.note,
+            Status: pt.status || 'Active', 
+            Ward: pt.ward, 
+            Bed: pt.bed, 
+            Date: pt.date, 
+            HN: pt.hn, 
+            AN: pt.an, 
+            Name: pt.name, 
+            Age: pt.age, 
+            Gender: pt.gender, 
+            Diagnosis: pt.diag, 
+            Attending: pt.attending || '-', // Export Attending
+            Owner: pt.owner, 
+            Note: pt.note,
             Created_At: pt.createdAt ? new Date(pt.createdAt.seconds * 1000).toLocaleString() : '-',
             Updated_At: pt.updatedAt ? new Date(pt.updatedAt.seconds * 1000).toLocaleString() : '-'
         }));
@@ -756,6 +783,12 @@ function createPatientRow(pt, isActive) {
     `;
 
     let displayOwner = pt.owner || '-';
+    // Logic แสดง Attending ตัวเล็กใต้ Owner
+    let attendingHtml = '';
+    if (pt.attending) {
+        attendingHtml = `<div style="font-size: 0.8em; color: #95a5a6; margin-top: 2px;">(Staff: ${pt.attending})</div>`;
+    }
+
     if (currentUsername && displayOwner.toLowerCase().includes(currentUsername)) {
          const highlightStyle = "font-weight: bold; color: #2980b9; background-color: #d6eaf8; padding: 2px 6px; border-radius: 4px; display: inline-block;";
          displayOwner = `<span style="${highlightStyle}">${displayOwner}</span>`;
@@ -773,7 +806,13 @@ function createPatientRow(pt, isActive) {
         <td><div><strong>HN:</strong> ${pt.hn || '-'}</div><div class="text-muted"><strong>AN:</strong> ${pt.an || '-'}</div></td>
         <td><div style="font-weight:600;">${pt.name || 'ไม่ระบุชื่อ'}</div><div class="text-muted">${pt.age ? pt.age + ' ปี' : '-'} / ${pt.gender || '-'}</div></td>
         <td>${pt.diag || '-'}</td>
-        <td>${displayOwner}</td>
+        
+        <!-- รวม Owner และ Attending ในช่องเดียว -->
+        <td>
+            <div>${displayOwner}</div>
+            ${attendingHtml}
+        </td>
+        
         <td class="text-orange">${pt.note || '-'}</td>
         <td><div class="action-buttons">${actionButtons}</div></td>
     `;
@@ -931,7 +970,10 @@ if(admitForm) {
             ward: document.getElementById('ward').value || "", bed: document.getElementById('bed').value || "", date: document.getElementById('admitDate').value || "",
             hn: document.getElementById('hn').value || "", an: document.getElementById('an').value || "", name: document.getElementById('name').value || "",
             age: document.getElementById('age').value || "", gender: document.getElementById('gender').value || "", diag: document.getElementById('diag').value || "",
-            owner: document.getElementById('owner').value || "", note: document.getElementById('note').value || "", status: editDocId ? undefined : "Active", updatedAt: serverTimestamp()
+            // Capture Attending
+            owner: document.getElementById('owner').value || "", 
+            attending: document.getElementById('attending').value || "", 
+            note: document.getElementById('note').value || "", status: editDocId ? undefined : "Active", updatedAt: serverTimestamp()
         };
         if (!editDocId) patientData.createdAt = serverTimestamp();
         if(patientData.status === undefined) delete patientData.status;
@@ -952,7 +994,11 @@ window.openEditModal = (id) => {
     document.getElementById('ward').value = pt.ward || ""; document.getElementById('bed').value = pt.bed || ""; document.getElementById('admitDate').value = pt.date || "";
     document.getElementById('hn').value = pt.hn || ""; document.getElementById('an').value = pt.an || ""; document.getElementById('name').value = pt.name || "";
     document.getElementById('age').value = pt.age || ""; document.getElementById('gender').value = pt.gender || ""; document.getElementById('diag').value = pt.diag || "";
-    document.getElementById('owner').value = pt.owner || ""; document.getElementById('note').value = pt.note || "";
+    // Pre-fill Owner & Attending
+    document.getElementById('owner').value = pt.owner || ""; 
+    document.getElementById('attending').value = pt.attending || "";
+    
+    document.getElementById('note').value = pt.note || "";
     document.getElementById('modal-title').innerText = "Edit Pt Info";
     modal.style.display = 'block';
 }

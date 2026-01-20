@@ -103,28 +103,28 @@
             </div>
 
             <!-- 🧾 QUEUE VIEW -->
-<div id="queue-section" style="margin-bottom: 20px;">
-    <div class="card summary-card-style" style="border-left: 4px solid #2980b9;">
-        <div style="
-            padding-bottom: 10px;
-            font-weight: bold;
-            color: #555;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 10px;
-        ">
-            <i class="fas fa-list-ol"></i> Queue
-        </div>
+            <div id="queue-section" style="margin-bottom: 20px;">
+                <div class="card summary-card-style" style="border-left: 4px solid #2980b9;">
+                    <div style="
+                        padding-bottom: 10px;
+                        font-weight: bold;
+                        color: #555;
+                        border-bottom: 1px solid #eee;
+                        margin-bottom: 10px;
+                    ">
+                        <i class="fas fa-list-ol"></i> Queue
+                    </div>
 
-        <div id="queue-list" style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 15px;
-        ">
-            <span style="color:#999;">Loading queue...</span>
-        </div>
-    </div>
-</div>
+                    <div id="queue-list" style="
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        font-size: 15px;
+                    ">
+                        <span style="color:#999;">Loading queue...</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- TAB NAVIGATION -->
             <div class="nav-tabs">
@@ -179,13 +179,14 @@
                                 <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <!-- ลบ Attending แยก แล้วรวมไว้ใน Owner -->
+                                <th style="width: 140px;">Owner (Staff)</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="new-cases-list">
-                            <tr><td colspan="9" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>
+                            <tr><td colspan="10" style="text-align:center; color:#999;">No new cases in last 24h</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -202,13 +203,14 @@
                                 <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <!-- ลบ Attending แยก แล้วรวมไว้ใน Owner -->
+                                <th style="width: 140px;">Owner (Staff)</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="patient-list">
-                            <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>
+                            <tr><td colspan="10" style="text-align:center;">Loading data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -225,13 +227,14 @@
                                 <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <!-- ลบ Attending แยก แล้วรวมไว้ใน Owner -->
+                                <th style="width: 140px;">Owner (Staff)</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="discharged-list">
-                            <tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>
+                            <tr><td colspan="10" style="text-align:center; color:#999;">No discharged history</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -258,13 +261,14 @@
                                 <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <!-- ลบ Attending แยก แล้วรวมไว้ใน Owner -->
+                                <th style="width: 140px;">Owner (Staff)</th>
                                 <th>Note</th>
                                 <th style="width: 90px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="mypatients-list">
-                            <tr><td colspan="9" style="text-align:center;">Loading...</td></tr>
+                            <tr><td colspan="10" style="text-align:center;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -282,13 +286,14 @@
                                 <th style="width: 150px;">HN / AN</th>
                                 <th>Patient Info</th>
                                 <th>Diagnosis</th>
-                                <th style="width: 100px;">Owner</th>
+                                <!-- ลบ Attending แยก แล้วรวมไว้ใน Owner -->
+                                <th style="width: 140px;">Owner (Staff)</th>
                                 <th>Note</th>
                                 <th style="width: 80px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="mypatients-discharged-list">
-                            <tr><td colspan="9" style="text-align:center; color:#999;">No discharged history</td></tr>
+                            <tr><td colspan="10" style="text-align:center; color:#999;">No discharged history</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -390,11 +395,20 @@
                     <input type="text" id="diag" placeholder="e.g. Acute Appendicitis">
                 </div>
 
-                <div class="form-group">
-                    <label>Owner</label>
-                    <select id="owner">
-                        <option value="" selected>-- Owner --</option>
-                    </select>
+                <!-- ปรับให้เลือก Staff และ Resident คู่กัน -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Attending (Staff)</label>
+                        <select id="attending">
+                            <option value="" selected>-- Select Staff --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner (Resident/Extern)</label>
+                        <select id="owner">
+                            <option value="" selected>-- Select Owner --</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -470,16 +484,23 @@
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal('settings-modal')">&times;</span>
             <h2 style="color: #34495e;"><i class="fas fa-cog"></i> ตั้งค่า Dropdown</h2>
-            <p style="color:#666; font-size:0.9em; margin-bottom:15px;">แก้ไขรายชื่อ Ward และ Owner (พิมพ์ 1 ชื่อต่อ 1 บรรทัด)</p>
+            <p style="color:#666; font-size:0.9em; margin-bottom:15px;">แก้ไขรายชื่อ (พิมพ์ 1 ชื่อต่อ 1 บรรทัด)</p>
             
             <form id="settings-form">
                 <div class="form-group">
                     <label>รายชื่อ Wards</label>
-                    <textarea id="settings-wards" rows="5" placeholder="Sx ชาย\nSx หญิง..."></textarea>
+                    <textarea id="settings-wards" rows="4" placeholder="Sx ชาย\nSx หญิง..."></textarea>
                 </div>
+                
+                <!-- เพิ่มช่อง Attending -->
+                <div class="form-group">
+                    <label>รายชื่อ Attending (Staff)</label>
+                    <textarea id="settings-attendings" rows="4" placeholder="อ.สมชาย\nอ.วิภา..."></textarea>
+                </div>
+
                 <div class="form-group">
                     <label>รายชื่อ Owner (แพทย์เจ้าของไข้)</label>
-                    <textarea id="settings-owners" rows="8" placeholder="อ.สมศักดิ์\nR4 Somjai..."></textarea>
+                    <textarea id="settings-owners" rows="6" placeholder="อ.สมศักดิ์\nR4 Somjai..."></textarea>
                 </div>
                 <button type="submit" class="btn btn-submit" style="background-color: #34495e;">บันทึกการตั้งค่า</button>
             </form>
